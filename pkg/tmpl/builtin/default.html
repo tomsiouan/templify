@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{{.Title}}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            /* ── Variables ── */
+            :root {
+                --blue: #5368fe;
+                --blue-light: #8c9afe;
+                --bg-soft: #eff2fa;
+                --text: #1c1e2e;
+                --text-muted: #6b7280;
+            }
+
+            /* ── Paged media ── */
+            @page {
+                size: A4;
+                margin: 22mm 20mm 22mm 22mm;
+                @bottom-right {
+                    content: counter(page) " / " counter(pages);
+                    font-family: "Barlow", sans-serif;
+                    font-size: 8.5pt;
+                    color: var(--blue-light);
+                }
+            }
+
+            @page cover {
+                margin: 0;
+                @bottom-right {
+                    content: none;
+                }
+            }
+
+            /* ── Reset ── */
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* ── Base ── */
+            body {
+                font-family: "Barlow", sans-serif;
+                font-weight: 400;
+                font-size: 11pt;
+                line-height: 1.7;
+                color: var(--text);
+                background: #fff;
+            }
+
+            /* ════════════════════════════════════════
+       COVER PAGE
+    ════════════════════════════════════════ */
+            .cover {
+                page: cover;
+                page-break-after: always;
+                background: var(--blue);
+                width: 210mm;
+                height: 297mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                padding: 18mm 18mm 16mm;
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* Decorative circles */
+            .cover::before {
+                content: "";
+                position: absolute;
+                bottom: -35mm;
+                right: -25mm;
+                width: 110mm;
+                height: 110mm;
+                border-radius: 50%;
+                background: var(--blue-light);
+                opacity: 0.25;
+            }
+            .cover::after {
+                content: "";
+                position: absolute;
+                bottom: 25mm;
+                right: 15mm;
+                width: 60mm;
+                height: 60mm;
+                border-radius: 50%;
+                background: var(--blue-light);
+                opacity: 0.18;
+            }
+
+            .cover-top {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+
+            .cover-doctype {
+                font-size: 8.5pt;
+                font-weight: 600;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: rgba(255, 255, 255, 0.65);
+            }
+
+            .cover-version {
+                font-size: 8.5pt;
+                font-weight: 600;
+                color: rgba(255, 255, 255, 0.55);
+                letter-spacing: 0.1em;
+            }
+
+            .cover-body {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 12mm 0 8mm;
+            }
+
+            .cover-accent {
+                width: 12mm;
+                height: 3px;
+                background: var(--blue-light);
+                border-radius: 2px;
+                margin-bottom: 7mm;
+            }
+
+            .cover h1 {
+                font-size: 29pt;
+                font-weight: 600;
+                line-height: 1.2;
+                color: #fff;
+                margin: 0 0 4mm;
+                max-width: 155mm;
+                border: none;
+            }
+
+            .cover-subtitle {
+                font-size: 11pt;
+                color: rgba(255, 255, 255, 0.65);
+                max-width: 140mm;
+            }
+
+            .cover-bottom {
+                display: flex;
+                flex-direction: column;
+                gap: 2mm;
+                position: relative;
+                z-index: 1;
+            }
+
+            .cover-bottom::before {
+                content: "";
+                display: block;
+                width: 100%;
+                height: 1px;
+                background: rgba(255, 255, 255, 0.2);
+                margin-bottom: 5mm;
+            }
+
+            .cover-meta-line {
+                font-size: 10pt;
+                color: rgba(255, 255, 255, 0.75);
+            }
+
+            .cover-meta-line strong {
+                color: #fff;
+                font-weight: 600;
+            }
+
+            /* ════════════════════════════════════════
+       HEADINGS
+    ════════════════════════════════════════ */
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
+                font-weight: 600;
+                page-break-after: avoid;
+                line-height: 1.3;
+            }
+
+            h1 {
+                font-size: 18pt;
+                color: var(--blue);
+                border-bottom: 2px solid var(--blue);
+                padding-bottom: 2.5mm;
+                margin: 10mm 0 4mm;
+            }
+
+            h2 {
+                font-size: 14pt;
+                color: var(--blue);
+                border-bottom: 1px solid var(--bg-soft);
+                padding-bottom: 1.5mm;
+                margin: 8mm 0 3mm;
+            }
+
+            h3 {
+                font-size: 12pt;
+                color: var(--blue-light);
+                margin: 6mm 0 2.5mm;
+            }
+
+            h4 {
+                font-size: 11pt;
+                color: var(--blue);
+                margin: 5mm 0 2mm;
+            }
+
+            h5,
+            h6 {
+                font-size: 10.5pt;
+                color: var(--text-muted);
+                margin: 4mm 0 2mm;
+            }
+
+            /* ════════════════════════════════════════
+       PROSE
+    ════════════════════════════════════════ */
+            p {
+                margin-bottom: 4mm;
+            }
+
+            strong {
+                font-weight: 600;
+            }
+
+            em {
+                font-style: italic;
+            }
+
+            a {
+                color: var(--blue);
+                text-decoration: none;
+            }
+
+            hr {
+                border: none;
+                border-top: 1px solid var(--bg-soft);
+                margin: 7mm 0;
+            }
+
+            /* ════════════════════════════════════════
+       LISTS
+    ════════════════════════════════════════ */
+            ul,
+            ol {
+                margin: 0 0 4mm 0;
+                padding-left: 6mm;
+            }
+
+            li {
+                margin-bottom: 1.5mm;
+            }
+
+            li > ul,
+            li > ol {
+                margin-top: 1mm;
+                margin-bottom: 0;
+            }
+
+            /* ════════════════════════════════════════
+       TABLES
+    ════════════════════════════════════════ */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 5mm 0;
+                font-size: 10pt;
+                page-break-inside: avoid;
+            }
+
+            thead tr {
+                background: var(--blue);
+                color: #fff;
+            }
+
+            th {
+                padding: 3mm 4mm;
+                text-align: left;
+                font-weight: 600;
+            }
+
+            td {
+                padding: 2.5mm 4mm;
+                border-bottom: 1px solid var(--bg-soft);
+                vertical-align: top;
+            }
+
+            tbody tr:nth-child(even) {
+                background: var(--bg-soft);
+            }
+
+            /* ════════════════════════════════════════
+       CODE
+    ════════════════════════════════════════ */
+            code {
+                font-family: "Courier New", Courier, monospace;
+                font-size: 9.5pt;
+                background: var(--bg-soft);
+                color: var(--blue);
+                padding: 0.5mm 2mm;
+                border-radius: 3px;
+            }
+
+            pre {
+                background: var(--bg-soft);
+                border-left: 4px solid var(--blue-light);
+                padding: 4mm 5mm;
+                border-radius: 0 5px 5px 0;
+                margin: 4mm 0;
+                page-break-inside: avoid;
+                overflow-x: auto;
+            }
+
+            pre code {
+                background: transparent;
+                color: var(--text);
+                padding: 0;
+                font-size: 9pt;
+            }
+
+            /* ════════════════════════════════════════
+       BLOCKQUOTE
+    ════════════════════════════════════════ */
+            blockquote {
+                border-left: 4px solid var(--blue-light);
+                margin: 4mm 0;
+                padding: 3mm 5mm;
+                background: var(--bg-soft);
+                border-radius: 0 5px 5px 0;
+            }
+
+            blockquote p {
+                margin-bottom: 0;
+                color: var(--blue);
+                font-style: italic;
+            }
+
+            /* ════════════════════════════════════════
+       DEFINITION LIST
+    ════════════════════════════════════════ */
+            dl {
+                margin: 4mm 0;
+            }
+
+            dt {
+                font-weight: 600;
+                color: var(--blue);
+                margin-top: 3mm;
+            }
+
+            dd {
+                margin-left: 6mm;
+                color: var(--text-muted);
+                margin-bottom: 1mm;
+            }
+
+            /* ════════════════════════════════════════
+       IMAGES
+    ════════════════════════════════════════ */
+            img {
+                max-width: 100%;
+                height: auto;
+                display: block;
+                margin: 5mm auto;
+            }
+
+            /* ════════════════════════════════════════
+       UTILITIES
+    ════════════════════════════════════════ */
+            .page-break {
+                page-break-before: always;
+            }
+
+            @media print {
+                pre {
+                    white-space: pre-wrap;
+                    word-break: break-all;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        {{if .Title}}
+        <div class="cover">
+            <div class="cover-top">
+                <span class="cover-doctype"
+                    >{{if index .Meta "doctype"}}{{index .Meta
+                    "doctype"}}{{else}}Document{{end}}</span
+                >
+                {{if index .Meta "version"}}<span class="cover-version"
+                    >{{index .Meta "version"}}</span
+                >{{end}}
+            </div>
+
+            <div class="cover-body">
+                <div class="cover-accent"></div>
+                <h1>{{.Title}}</h1>
+                {{if index .Meta "subtitle"}}
+                <p class="cover-subtitle">{{index .Meta "subtitle"}}</p>
+                {{end}}
+            </div>
+
+            <div class="cover-bottom">
+                {{if .Author}}
+                <div class="cover-meta-line">
+                    <strong>Auteur :</strong> {{.Author}}
+                </div>
+                {{end}} {{if index .Meta "company"}}
+                <div class="cover-meta-line">
+                    <strong>Société :</strong> {{index .Meta "company"}}
+                </div>
+                {{end}} {{if .Date}}
+                <div class="cover-meta-line">
+                    <strong>Date :</strong> {{.Date}}
+                </div>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+
+        <div class="content">{{.Body}}</div>
+    </body>
+</html>
