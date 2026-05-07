@@ -1,9 +1,7 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/tomsiouan/templify/pkg/parser"
@@ -12,30 +10,33 @@ import (
 )
 
 func main() {
-	input := flag.String("input", "", "path to the input Markdown file (required)")
-	output := flag.String("output", "output.pdf", "path for the generated PDF")
-	template := flag.String("template", "default", "built-in template name or path to a .html file")
-	flag.Parse()
-
-	if *input == "" {
-		fmt.Fprintln(os.Stderr, "error: -input is required")
-		flag.Usage()
+	cfg, err := parseFlags()
+	if err != nil {
+		slog.Error("invalid flags", "err", err)
 		os.Exit(1)
 	}
 
-	doc, err := parser.ParseFile(*input)
+	if err := setupLogger(cfg.Log); err != nil {
+		slog.Error("invalid logger config", "err", err)
+		os.Exit(1)
+	}
+
+	doc, err := parser.ParseFile(cfg.Input)
 	if err != nil {
-		log.Fatalf("parse: %v", err)
+		slog.Error("parse failed", "err", err)
+		os.Exit(1)
 	}
 
-	html, err := tmpl.Render(*template, doc)
+	html, err := tmpl.Render(cfg.Template, doc)
 	if err != nil {
-		log.Fatalf("template: %v", err)
+		slog.Error("template failed", "err", err)
+		os.Exit(1)
 	}
 
-	if err := renderer.ToPDF(html, *output); err != nil {
-		log.Fatalf("render: %v", err)
+	if err := renderer.ToPDF(html, cfg.Output); err != nil {
+		slog.Error("render failed", "err", err)
+		os.Exit(1)
 	}
 
-	fmt.Printf("generated: %s\n", *output)
+	slog.Info("generated", "output", cfg.Output)
 }
