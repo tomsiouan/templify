@@ -23,6 +23,9 @@ func main() {
 		slog.Error("parse failed", "err", err)
 		os.Exit(1)
 	}
+	if !cfg.TOC {
+		doc.TOC = nil
+	}
 
 	html, err := tmpl.Render(cfg.Template, doc, cfg.Mode)
 	if err != nil {
