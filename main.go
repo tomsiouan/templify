@@ -16,10 +16,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := setupLogger(cfg.Log); err != nil {
-		slog.Error("invalid logger config", "err", err)
-		os.Exit(1)
-	}
+	setupLogger(cfg.Log)
 
 	doc, err := parser.ParseFile(cfg.Input)
 	if err != nil {

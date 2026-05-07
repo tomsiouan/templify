@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 )
 
 type LogConfig struct {
 	Format string // "text" or "json"
-	Level  string // "debug", "info", "warn", "error"
+	Level  slog.Level
 }
 
 type Config struct {
@@ -18,22 +19,19 @@ type Config struct {
 }
 
 func parseFlags() (*Config, error) {
-	input := flag.String("input", "", "path to the input Markdown file (required)")
-	output := flag.String("output", "output.pdf", "path for the generated PDF")
-	template := flag.String("template", "default", "built-in template name or path to a .html file")
-	logFormat := flag.String("log-format", "text", "log format: text or json")
-	logLevel := flag.String("log-level", "info", "log level: debug, info, warn, error")
+	var cfg Config
+
+	flag.StringVar(&cfg.Input, "input", "", "path to the input Markdown file (required)")
+	flag.StringVar(&cfg.Output, "output", "output.pdf", "path for the generated PDF")
+	flag.StringVar(&cfg.Template, "template", "default", "built-in template name or path to a .html file")
+	flag.StringVar(&cfg.Log.Format, "log-format", "text", "log format: text or json")
+	flag.TextVar(&cfg.Log.Level, "log-level", slog.LevelInfo, "log level: DEBUG, INFO, WARN, ERROR")
 	flag.Parse()
 
-	if *input == "" {
+	if cfg.Input == "" {
 		flag.Usage()
 		return nil, fmt.Errorf("-input is required")
 	}
 
-	return &Config{
-		Input:    *input,
-		Output:   *output,
-		Template: *template,
-		Log:      LogConfig{Format: *logFormat, Level: *logLevel},
-	}, nil
+	return &cfg, nil
 }
