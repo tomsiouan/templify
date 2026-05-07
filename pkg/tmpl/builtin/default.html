@@ -22,11 +22,25 @@
             /* ── Paged media ── */
             @page {
                 size: A4;
-                margin: 22mm 20mm 22mm 22mm;
+                margin: 16mm 20mm 22mm 22mm;
+                @bottom-right {
+                    content: counter(page) " / " counter(pages);
+                    font-family: "Barlow", sans-serif;
+                    font-size: 8.5pt;
+                    color: var(--blue-light);
+                }
             }
 
             @page cover {
+                size: A4;
                 margin: 0;
+                @bottom-right { content: none; }
+            }
+
+            @page blank {
+                size: A4;
+                margin: 16mm 20mm 22mm 22mm;
+                @bottom-right { content: none; }
             }
 
             /* ── Reset ── */
@@ -63,6 +77,7 @@
                 padding: 18mm 18mm 16mm;
                 position: relative;
                 overflow: hidden;
+                break-inside: avoid;
             }
 
             /* Decorative circles */
@@ -196,7 +211,9 @@
                 color: var(--blue);
                 border-bottom: 1px solid var(--bg-soft);
                 padding-bottom: 1.5mm;
-                margin: 8mm 0 3mm;
+                margin: 0 0 3mm;
+                break-before: page;
+                page-break-before: always;
             }
 
             h3 {
@@ -223,6 +240,11 @@
     ════════════════════════════════════════ */
             p {
                 margin-bottom: 4mm;
+            }
+
+            .report-mode p {
+                text-align: justify;
+                hyphens: auto;
             }
 
             strong {
@@ -374,11 +396,13 @@
             }
 
             /* ════════════════════════════════════════
-       REPORT MODE
+       BLANK PAGE
     ════════════════════════════════════════ */
-            .report-mode .content h2 {
-                break-before: page;
+            .blank-page {
+                page: blank;
                 page-break-before: always;
+                page-break-after: always;
+                height: 1px;
             }
 
             /* ════════════════════════════════════════
@@ -386,6 +410,68 @@
     ════════════════════════════════════════ */
             .page-break {
                 page-break-before: always;
+            }
+
+            /* ════════════════════════════════════════
+       TABLE OF CONTENTS
+    ════════════════════════════════════════ */
+            .toc-page {
+                page-break-after: always;
+                padding-top: 2mm;
+            }
+
+            .toc-heading {
+                font-size: 16pt;
+                font-weight: 600;
+                color: var(--blue);
+                border-bottom: 2px solid var(--blue);
+                padding-bottom: 2.5mm;
+                margin: 0 0 8mm;
+            }
+
+            .toc {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .toc-entry {
+                display: flex;
+                align-items: baseline;
+                text-decoration: none;
+                color: var(--text);
+                margin-bottom: 2.5mm;
+                overflow: hidden;
+            }
+
+            .toc-entry-title {
+                white-space: nowrap;
+            }
+
+            .toc-entry-filler {
+                flex: 1;
+                border-bottom: 1px dotted var(--text-muted);
+                margin: 0 3mm 1.5mm;
+                opacity: 0.5;
+            }
+
+            .toc-entry::after {
+                content: attr(data-page);
+                font-variant-numeric: tabular-nums;
+            }
+
+            .toc-level-1 .toc-entry-title {
+                font-weight: 600;
+            }
+
+            .toc-level-2 {
+                padding-left: 5mm;
+                font-size: 10.5pt;
+            }
+
+            .toc-level-3 {
+                padding-left: 10mm;
+                font-size: 10pt;
+                color: var(--text-muted);
             }
 
             @media print {
@@ -434,13 +520,23 @@
             </div>
         </div>
         {{end}}
+        {{if .Title}}<div class="blank-page"></div>{{end}}
+
+        {{if .TOC}}
+        <div class="toc-page">
+            <div class="toc-heading">Table des matières</div>
+            <nav class="toc">
+                {{range .TOC}}
+                <a href="#{{.ID}}" class="toc-entry toc-level-{{.Level}}">
+                    <span class="toc-entry-title">{{.Text}}</span>
+                    <span class="toc-entry-filler"></span>
+                </a>
+                {{end}}
+            </nav>
+        </div>
+        {{end}}
 
         <div class="content">{{.Body}}</div>
 
-        <div id="pdf-footer" style="display:none">
-            <div style="position:absolute;bottom:8mm;right:22mm;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:8.5pt;color:#8c9afe;">
-                <span class="pageNumber"></span> / <span class="totalPages"></span>
-            </div>
-        </div>
     </body>
 </html>

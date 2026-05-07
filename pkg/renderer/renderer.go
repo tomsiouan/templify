@@ -1,16 +1,46 @@
 package renderer
 
 import (
+	"embed"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/proto"
 )
 
+//go:embed assets/*.js
+var assets embed.FS
+
+const pagedJSConfig = `<script>
+window.PagedConfig = {
+    auto: true,
+    after: () => {
+        document.querySelectorAll('a.toc-entry[href]').forEach(entry => {
+            const id = entry.getAttribute('href').slice(1);
+            const target = document.getElementById(id);
+            if (target) {
+                const page = target.closest('.pagedjs_page');
+                if (page) entry.setAttribute('data-page', page.dataset.pageNumber);
+            }
+        });
+        window.__pagedDone = true;
+    }
+};
+</script>`
+
 func ToPDF(html string, outputPath string) error {
+	pagedJS, err := assets.ReadFile("assets/paged.polyfill.js")
+	if err != nil {
+		return fmt.Errorf("read paged.js: %w", err)
+	}
+
+	pagedJSTag := "<script>\n" + string(pagedJS) + "\n</script>"
+	html = strings.Replace(html, "</head>", pagedJSConfig+pagedJSTag+"</head>", 1)
+
 	tmp, err := os.CreateTemp("", "templify-*.html")
 	if err != nil {
 		return fmt.Errorf("create temp file: %w", err)
@@ -42,22 +72,28 @@ func ToPDF(html string, outputPath string) error {
 	if err != nil {
 		return fmt.Errorf("create page: %w", err)
 	}
+
 	if err := p.WaitLoad(); err != nil {
 		return fmt.Errorf("wait load: %w", err)
 	}
 
-	// Extract footer template from the page if a #pdf-footer element is defined.
-	footerTemplate := ""
-	if res, err := p.Eval(`() => { const el = document.getElementById('pdf-footer'); return el ? el.innerHTML.trim() : ''; }`); err == nil {
-		footerTemplate = res.Value.Str()
+	if _, err = p.Eval(`async () => {
+		await new Promise((resolve, reject) => {
+			const start = Date.now();
+			const check = () => {
+				if (window.__pagedDone) { resolve(); return; }
+				if (Date.now() - start > 60000) { reject(new Error('paged.js timeout')); return; }
+				setTimeout(check, 100);
+			};
+			check();
+		});
+	}`); err != nil {
+		return fmt.Errorf("wait paged.js: %w", err)
 	}
 
 	reader, err := p.PDF(&proto.PagePrintToPDF{
-		PrintBackground:     true,
-		PreferCSSPageSize:   true,
-		DisplayHeaderFooter: footerTemplate != "",
-		HeaderTemplate:      "<span></span>",
-		FooterTemplate:      footerTemplate,
+		PrintBackground:   true,
+		PreferCSSPageSize: true,
 	})
 	if err != nil {
 		return fmt.Errorf("print PDF: %w", err)
