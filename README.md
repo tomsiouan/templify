@@ -61,5 +61,4 @@ go build -o templify ./...
 
 ## Requirements
 
-- Go 1.21+
-- A Chromium-based browser on `$PATH` (used for HTML-to-PDF rendering), **or** `wkhtmltopdf`
+- Go 1.26.2+
