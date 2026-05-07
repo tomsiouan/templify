@@ -14,7 +14,7 @@ import (
 //go:embed builtin/*.html
 var builtinFS embed.FS
 
-func Render(name string, doc *parser.Document) (string, error) {
+func Render(name string, doc *parser.Document, mode string) (string, error) {
 	content, err := loadTemplate(name)
 	if err != nil {
 		return "", err
@@ -25,8 +25,13 @@ func Render(name string, doc *parser.Document) (string, error) {
 		return "", fmt.Errorf("parse template: %w", err)
 	}
 
+	data := struct {
+		*parser.Document
+		Mode string
+	}{doc, mode}
+
 	var buf bytes.Buffer
-	if err := t.Execute(&buf, doc); err != nil {
+	if err := t.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("execute template: %w", err)
 	}
 

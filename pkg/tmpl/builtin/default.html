@@ -23,19 +23,10 @@
             @page {
                 size: A4;
                 margin: 22mm 20mm 22mm 22mm;
-                @bottom-right {
-                    content: counter(page) " / " counter(pages);
-                    font-family: "Barlow", sans-serif;
-                    font-size: 8.5pt;
-                    color: var(--blue-light);
-                }
             }
 
             @page cover {
                 margin: 0;
-                @bottom-right {
-                    content: none;
-                }
             }
 
             /* ── Reset ── */
@@ -280,7 +271,10 @@
                 border-collapse: collapse;
                 margin: 5mm 0;
                 font-size: 10pt;
-                page-break-inside: avoid;
+            }
+
+            thead {
+                display: table-row-group;
             }
 
             thead tr {
@@ -380,6 +374,14 @@
             }
 
             /* ════════════════════════════════════════
+       REPORT MODE
+    ════════════════════════════════════════ */
+            .report-mode .content h2 {
+                break-before: page;
+                page-break-before: always;
+            }
+
+            /* ════════════════════════════════════════
        UTILITIES
     ════════════════════════════════════════ */
             .page-break {
@@ -394,7 +396,7 @@
             }
         </style>
     </head>
-    <body>
+    <body{{if eq .Mode "report"}} class="report-mode"{{end}}>
         {{if .Title}}
         <div class="cover">
             <div class="cover-top">
@@ -434,5 +436,11 @@
         {{end}}
 
         <div class="content">{{.Body}}</div>
+
+        <div id="pdf-footer" style="display:none">
+            <div style="position:absolute;bottom:8mm;right:22mm;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:8.5pt;color:#8c9afe;">
+                <span class="pageNumber"></span> / <span class="totalPages"></span>
+            </div>
+        </div>
     </body>
 </html>

@@ -24,7 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	html, err := tmpl.Render(cfg.Template, doc)
+	html, err := tmpl.Render(cfg.Template, doc, cfg.Mode)
 	if err != nil {
 		slog.Error("template failed", "err", err)
 		os.Exit(1)

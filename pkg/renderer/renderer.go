@@ -46,9 +46,18 @@ func ToPDF(html string, outputPath string) error {
 		return fmt.Errorf("wait load: %w", err)
 	}
 
+	// Extract footer template from the page if a #pdf-footer element is defined.
+	footerTemplate := ""
+	if res, err := p.Eval(`() => { const el = document.getElementById('pdf-footer'); return el ? el.innerHTML.trim() : ''; }`); err == nil {
+		footerTemplate = res.Value.Str()
+	}
+
 	reader, err := p.PDF(&proto.PagePrintToPDF{
-		PrintBackground:   true,
-		PreferCSSPageSize: true,
+		PrintBackground:     true,
+		PreferCSSPageSize:   true,
+		DisplayHeaderFooter: footerTemplate != "",
+		HeaderTemplate:      "<span></span>",
+		FooterTemplate:      footerTemplate,
 	})
 	if err != nil {
 		return fmt.Errorf("print PDF: %w", err)
