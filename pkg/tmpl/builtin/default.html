@@ -401,7 +401,6 @@
             .blank-page {
                 page: blank;
                 page-break-before: always;
-                page-break-after: always;
                 height: 1px;
             }
 
@@ -520,7 +519,7 @@
             </div>
         </div>
         {{end}}
-        {{if .Title}}<div class="blank-page"></div>{{end}}
+        {{if .TOC}}<div class="blank-page"></div>{{end}}
 
         {{if .TOC}}
         <div class="toc-page">
