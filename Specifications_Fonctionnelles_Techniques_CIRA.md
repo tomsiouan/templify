@@ -430,7 +430,7 @@ Ce choix est une décision de risk management délibérée : appliquer du Terraf
 - **AC-Router-01 :** Réponses JSON avec champ `request_id` pour traçabilité.
 - **AC-Router-02 :** Rate limiting à 100 req/min par session, header `X-RateLimit-Remaining` dans chaque réponse.
 
-## 13. Contraintes Non-Fonctionnelles
+## Contraintes Non-Fonctionnelles
 
 | Catégorie | Contrainte | Seuil |
 |---|---|---|

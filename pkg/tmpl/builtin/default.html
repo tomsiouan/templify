@@ -459,7 +459,7 @@
             <div class="toc-heading">Sommaire</div>
             <nav class="toc">
                 {{range .TOC}}
-                <a href="#{{.ID}}" class="toc-entry toc-level-{{.Level}}">
+                <a href="#{{.ID}}" class="toc-entry toc-level-{{.Level}}{{if .NoNumber}} no-number{{end}}">
                     <span class="toc-entry-title">{{.Text}}</span>
                     <span class="toc-entry-filler"></span>
                 </a>

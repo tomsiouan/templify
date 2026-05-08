@@ -148,6 +148,25 @@ func buildConfigCSS(cfg *config.Config) template.HTML {
 		fmt.Fprintf(&sb, "    hyphens: auto;\n")
 		fmt.Fprintf(&sb, "}\n\n")
 	}
+	if cfg.ParagraphIndent != "" {
+		fmt.Fprintf(&sb, "p { text-indent: %s; }\n\n", cfg.ParagraphIndent)
+	}
+	if cfg.HeadingNumbers.Enabled {
+		sb.WriteString("body { counter-reset: h2c; }\n")
+		sb.WriteString("h2:not(.no-number) { counter-reset: h3c; counter-increment: h2c; }\n")
+		sb.WriteString("h2:not(.no-number)::before { content: counter(h2c) \". \"; }\n")
+		sb.WriteString("h3:not(.no-number) { counter-reset: h4c; counter-increment: h3c; }\n")
+		sb.WriteString("h3:not(.no-number)::before { content: counter(h2c) \".\" counter(h3c) \" \"; }\n")
+		sb.WriteString("h4:not(.no-number) { counter-increment: h4c; }\n")
+		sb.WriteString("h4:not(.no-number)::before { content: counter(h2c) \".\" counter(h3c) \".\" counter(h4c) \" \"; }\n")
+		sb.WriteString(".toc-page { counter-reset: th2c; }\n")
+		sb.WriteString(".toc-level-2:not(.no-number) { counter-reset: th3c; counter-increment: th2c; }\n")
+		sb.WriteString(".toc-level-2:not(.no-number) .toc-entry-title::before { content: counter(th2c) \". \"; }\n")
+		sb.WriteString(".toc-level-3:not(.no-number) { counter-reset: th4c; counter-increment: th3c; }\n")
+		sb.WriteString(".toc-level-3:not(.no-number) .toc-entry-title::before { content: counter(th2c) \".\" counter(th3c) \" \"; }\n")
+		sb.WriteString(".toc-level-4:not(.no-number) { counter-increment: th4c; }\n")
+		sb.WriteString(".toc-level-4:not(.no-number) .toc-entry-title::before { content: counter(th2c) \".\" counter(th3c) \".\" counter(th4c) \" \"; }\n\n")
+	}
 
 	type hEntry struct {
 		tag   string

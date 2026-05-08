@@ -39,10 +39,18 @@ func main() {
 
 	cfg.ApplyDocMeta(doc.Meta)
 
+	if cfg.HeadingNumbers.Enabled {
+		parser.MarkNoNumber(doc, cfg.HeadingNumbers.Exclude)
+	}
+
 	if cfg.TOC.Enabled {
+		tocExclude := make(map[string]bool, len(cfg.TOC.Exclude))
+		for _, s := range cfg.TOC.Exclude {
+			tocExclude[s] = true
+		}
 		filtered := doc.TOC[:0]
 		for _, e := range doc.TOC {
-			if e.Level <= cfg.TOC.MaxDepth {
+			if e.Level <= cfg.TOC.MaxDepth && !tocExclude[e.Text] {
 				filtered = append(filtered, e)
 			}
 		}

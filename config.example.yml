@@ -33,24 +33,29 @@ headings:
     page_break_before: false
 
 justify: false
+paragraph_indent: 13mm
+heading_numbers:
+  enabled: false # prefix h2+ with 1 / 1.1 / 1.1.1 counters (also applied to TOC)
+  exclude: [] # heading texts that must not be numbered (e.g. Introduction, Conclusion)
 
 toc:
   enabled: true
   max_depth: 2
+  exclude: [] # heading texts to omit from the TOC entirely (e.g. Remerciements)
 
 header:
   enabled: false
-  background: ""   # CSS background value, supports gradients e.g. "linear-gradient(to right, #1e293b, #475569)"
+  background: "" # CSS background value, supports gradients e.g. "linear-gradient(to right, #1e293b, #475569)"
   left: ""
   center: ""
   right: ""
 
 footer:
   enabled: true
-  background: ""   # CSS background value, supports gradients
+  background: "" # CSS background value, supports gradients
   left: ""
   center: ""
-  right: "{page} / {pages}"   # supports {page} and {pages} tokens
+  right: "{page} / {pages}" # supports {page} and {pages} tokens
 
 blank_page: false
 
@@ -63,4 +68,4 @@ colors:
 
 cover:
   enabled: true
-  template: ""   # path to a custom cover .html template (relative to this config file)
+  template: "" # path to a custom cover .html template (relative to this config file)

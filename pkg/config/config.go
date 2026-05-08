@@ -44,8 +44,14 @@ type FontConfig struct {
 }
 
 type TOCConfig struct {
-	Enabled  bool `yaml:"enabled"`
-	MaxDepth int  `yaml:"max_depth"`
+	Enabled  bool     `yaml:"enabled"`
+	MaxDepth int      `yaml:"max_depth"`
+	Exclude  []string `yaml:"exclude"`
+}
+
+type HeadingNumbersConfig struct {
+	Enabled bool     `yaml:"enabled"`
+	Exclude []string `yaml:"exclude"`
 }
 
 // HeaderFooterConfig configures a header or footer band on every page.
@@ -72,17 +78,19 @@ type CoverConfig struct {
 }
 
 type Config struct {
-	Page      PageConfig         `yaml:"page"`
-	Font      FontConfig         `yaml:"font"`
-	Headings  HeadingsConfig     `yaml:"headings"`
-	Justify   bool               `yaml:"justify"`
-	TOC       TOCConfig          `yaml:"toc"`
-	Header    HeaderFooterConfig `yaml:"header"`
-	Footer    HeaderFooterConfig `yaml:"footer"`
-	BlankPage bool               `yaml:"blank_page"`
-	Colors    ColorsConfig       `yaml:"colors"`
-	Cover     CoverConfig        `yaml:"cover"`
-	dir       string
+	Page            PageConfig         `yaml:"page"`
+	Font            FontConfig         `yaml:"font"`
+	Headings        HeadingsConfig     `yaml:"headings"`
+	Justify         bool               `yaml:"justify"`
+	ParagraphIndent string             `yaml:"paragraph_indent"`
+	HeadingNumbers  HeadingNumbersConfig `yaml:"heading_numbers"`
+	TOC             TOCConfig          `yaml:"toc"`
+	Header          HeaderFooterConfig `yaml:"header"`
+	Footer          HeaderFooterConfig `yaml:"footer"`
+	BlankPage       bool               `yaml:"blank_page"`
+	Colors          ColorsConfig       `yaml:"colors"`
+	Cover           CoverConfig        `yaml:"cover"`
+	dir             string
 }
 
 // ApplyDocMeta overrides header/footer Left/Center/Right from the document's front matter.

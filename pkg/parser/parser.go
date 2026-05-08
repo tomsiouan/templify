@@ -18,9 +18,10 @@ import (
 )
 
 type TocEntry struct {
-	Level int
-	Text  string
-	ID    string
+	Level    int
+	Text     string
+	ID       string
+	NoNumber bool
 }
 
 type Document struct {
@@ -103,6 +104,39 @@ func Parse(data []byte) (*Document, error) {
 }
 
 var reImgTitle = regexp.MustCompile(`(<img\b[^>]*\btitle="([^"]*)"[^>]*>)`)
+var reHeading = regexp.MustCompile(`(?i)<(h[2-6])(\b[^>]*)>([^<]*)</h[2-6]>`)
+
+// MarkNoNumber adds class="no-number" to h2-h6 headings whose text matches
+// the exclude list, and sets NoNumber on the corresponding TOC entries.
+func MarkNoNumber(doc *Document, exclude []string) {
+	if len(exclude) == 0 {
+		return
+	}
+	set := make(map[string]bool, len(exclude))
+	for _, s := range exclude {
+		set[strings.TrimSpace(s)] = true
+	}
+	body := string(doc.Body)
+	body = reHeading.ReplaceAllStringFunc(body, func(s string) string {
+		m := reHeading.FindStringSubmatch(s)
+		if m == nil || !set[strings.TrimSpace(m[3])] {
+			return s
+		}
+		attrs := m[2]
+		if strings.Contains(attrs, `class="`) {
+			attrs = strings.Replace(attrs, `class="`, `class="no-number `, 1)
+		} else {
+			attrs += ` class="no-number"`
+		}
+		return "<" + m[1] + attrs + ">" + m[3] + "</" + m[1] + ">"
+	})
+	doc.Body = template.HTML(body)
+	for i := range doc.TOC {
+		if set[strings.TrimSpace(doc.TOC[i].Text)] {
+			doc.TOC[i].NoNumber = true
+		}
+	}
+}
 
 // wrapImageCaptions wraps <img title="..."> with <figure><figcaption> when a title is present.
 func wrapImageCaptions(html string) string {
