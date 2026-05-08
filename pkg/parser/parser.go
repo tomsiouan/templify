@@ -64,7 +64,7 @@ func Parse(data []byte) (*Document, error) {
 	var toc []TocEntry
 	_ = gast.Walk(root, func(n gast.Node, entering bool) (gast.WalkStatus, error) {
 		h, ok := n.(*gast.Heading)
-		if !ok || !entering || h.Level > 3 {
+		if !ok || !entering || h.Level > 6 {
 			return gast.WalkContinue, nil
 		}
 		id := ""

@@ -3,46 +3,13 @@
     <head>
         <meta charset="UTF-8" />
         <title>{{.Title}}</title>
+        {{if .Config.Font.URL}}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&display=swap"
-            rel="stylesheet"
-        />
+        <link href="{{.Config.Font.URL}}" rel="stylesheet" />
+        {{end}}
+        {{.ConfigCSS}}
         <style>
-            /* ── Variables ── */
-            :root {
-                --blue: #5368fe;
-                --blue-light: #8c9afe;
-                --bg-soft: #eff2fa;
-                --text: #1c1e2e;
-                --text-muted: #6b7280;
-            }
-
-            /* ── Paged media ── */
-            @page {
-                size: A4;
-                margin: 16mm 20mm 22mm 22mm;
-                @bottom-right {
-                    content: counter(page) " / " counter(pages);
-                    font-family: "Barlow", sans-serif;
-                    font-size: 8.5pt;
-                    color: var(--blue-light);
-                }
-            }
-
-            @page cover {
-                size: A4;
-                margin: 0;
-                @bottom-right { content: none; }
-            }
-
-            @page blank {
-                size: A4;
-                margin: 16mm 20mm 22mm 22mm;
-                @bottom-right { content: none; }
-            }
-
             /* ── Reset ── */
             *,
             *::before,
@@ -54,10 +21,7 @@
 
             /* ── Base ── */
             body {
-                font-family: "Barlow", sans-serif;
                 font-weight: 400;
-                font-size: 11pt;
-                line-height: 1.7;
                 color: var(--text);
                 background: #fff;
             }
@@ -149,6 +113,8 @@
                 margin: 0 0 4mm;
                 max-width: 155mm;
                 border: none;
+                break-before: auto;
+                page-break-before: auto;
             }
 
             .cover-subtitle {
@@ -199,7 +165,6 @@
             }
 
             h1 {
-                font-size: 18pt;
                 color: var(--blue);
                 border-bottom: 2px solid var(--blue);
                 padding-bottom: 2.5mm;
@@ -207,30 +172,24 @@
             }
 
             h2 {
-                font-size: 14pt;
                 color: var(--blue);
                 border-bottom: 1px solid var(--bg-soft);
                 padding-bottom: 1.5mm;
                 margin: 0 0 3mm;
-                break-before: page;
-                page-break-before: always;
             }
 
             h3 {
-                font-size: 12pt;
                 color: var(--blue-light);
                 margin: 6mm 0 2.5mm;
             }
 
             h4 {
-                font-size: 11pt;
                 color: var(--blue);
                 margin: 5mm 0 2mm;
             }
 
             h5,
             h6 {
-                font-size: 10.5pt;
                 color: var(--text-muted);
                 margin: 4mm 0 2mm;
             }
@@ -240,11 +199,6 @@
     ════════════════════════════════════════ */
             p {
                 margin-bottom: 4mm;
-            }
-
-            .report-mode p {
-                text-align: justify;
-                hyphens: auto;
             }
 
             strong {
@@ -481,7 +435,7 @@
             }
         </style>
     </head>
-    <body{{if eq .Mode "report"}} class="report-mode"{{end}}>
+    <body>
         {{if .Title}}
         <div class="cover">
             <div class="cover-top">
@@ -519,7 +473,8 @@
             </div>
         </div>
         {{end}}
-        {{if .TOC}}<div class="blank-page"></div>{{end}}
+
+        {{if and .Config.BlankPage .TOC}}<div class="blank-page"></div>{{end}}
 
         {{if .TOC}}
         <div class="toc-page">
