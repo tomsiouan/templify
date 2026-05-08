@@ -34,6 +34,7 @@ headings:
 
 justify: false
 paragraph_indent: 13mm
+heading_indent: "" # indentation step per sub-level: h3 = 1×, h4 = 2×, h5 = 3× (e.g. "5mm")
 heading_numbers:
   enabled: false # prefix h2+ with 1 / 1.1 / 1.1.1 counters (also applied to TOC)
   exclude: [] # heading texts that must not be numbered (e.g. Introduction, Conclusion)

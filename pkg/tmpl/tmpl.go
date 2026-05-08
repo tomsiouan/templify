@@ -151,6 +151,12 @@ func buildConfigCSS(cfg *config.Config) template.HTML {
 	if cfg.ParagraphIndent != "" {
 		fmt.Fprintf(&sb, "p { text-indent: %s; }\n\n", cfg.ParagraphIndent)
 	}
+	if cfg.HeadingIndent != "" {
+		fmt.Fprintf(&sb, "h3 { padding-left: %s; }\n", cfg.HeadingIndent)
+		fmt.Fprintf(&sb, "h4 { padding-left: calc(2 * %s); }\n", cfg.HeadingIndent)
+		fmt.Fprintf(&sb, "h5 { padding-left: calc(3 * %s); }\n", cfg.HeadingIndent)
+		fmt.Fprintf(&sb, "h6 { padding-left: calc(4 * %s); }\n\n", cfg.HeadingIndent)
+	}
 	if cfg.HeadingNumbers.Enabled {
 		sb.WriteString("body { counter-reset: h2c; }\n")
 		sb.WriteString("h2:not(.no-number) { counter-reset: h3c; counter-increment: h2c; }\n")

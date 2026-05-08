@@ -81,8 +81,9 @@ type Config struct {
 	Page            PageConfig         `yaml:"page"`
 	Font            FontConfig         `yaml:"font"`
 	Headings        HeadingsConfig     `yaml:"headings"`
-	Justify         bool               `yaml:"justify"`
-	ParagraphIndent string             `yaml:"paragraph_indent"`
+	Justify         bool                 `yaml:"justify"`
+	ParagraphIndent string               `yaml:"paragraph_indent"`
+	HeadingIndent   string               `yaml:"heading_indent"`
 	HeadingNumbers  HeadingNumbersConfig `yaml:"heading_numbers"`
 	TOC             TOCConfig          `yaml:"toc"`
 	Header          HeaderFooterConfig `yaml:"header"`
