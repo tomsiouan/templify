@@ -24,6 +24,8 @@ footer:
 
 ## Résumé Exécutif
 
+![This is an alt text.](./Markdown-mark.svg "This is a sample image.")
+
 Ce document constitue la référence technique et fonctionnelle du projet CIRA. Il décrit, fonctionnalité par fonctionnalité, ce que le système doit faire (spécifications fonctionnelles), comment il doit le faire (spécifications techniques), ainsi que les contraintes, dépendances et interfaces associées. Il intègre les arbitrages validés : remédiation "one-click safe" avec approval obligatoire en v1, multi-cloud AWS+Azure en phase 2 (GCP phase 3), Compliance as Code via OPA/Rego, boucle de feedback ML dès la phase 3, frontend server-side rendering Templ + Datastar (sans React ni GraphQL), et sessions cookie via alexedwards/scs + Redis (sans JWT).
 
 ---
@@ -175,8 +177,6 @@ L'utilisateur peut s'inscrire et se connecter via email/mot de passe ou OAuth (G
 - Rotation automatique proposée tous les 90 jours
 - Révocation depuis CIRA = suppression immédiate des credentials stockés
 
----
-
 ## 5. Module 3 — Scanner CSPM (moteur Go, open-source)
 
 ### 5.1 Stratégie Open-Source
@@ -231,8 +231,6 @@ Le moteur Go de scan est publié en open-source (Apache 2.0) pour attirer des co
 - **AC-SCAN-02 :** Taux de faux positifs sur les 10 règles critiques < 5% (mesuré sur dataset de test).
 - **AC-SCAN-03 :** En cas d'erreur 403 sur une ressource, le scanner isole cette ressource et continue sans interruption globale.
 
----
-
 ## 6. Module 4 — Scoring IA (LightGBM)
 
 ### 6.1 Description Fonctionnelle
@@ -263,8 +261,6 @@ Un modèle LightGBM calcule un score de sécurité global (0–100) contextuel, 
 - **AC-AI-02 :** AUC-ROC ≥ 0.85 pour la classification "infrastructure à risque élevé" sur le dataset de test.
 - **AC-AI-03 :** Rapport de performance du modèle produit à chaque phase (v1, v2) avec comparaison vs baseline.
 
----
-
 ## 7. Module 5 — Analyse des Coûts
 
 ### 7.1 Détections Phase 1 (AWS)
@@ -289,8 +285,6 @@ Un modèle LightGBM calcule un score de sécurité global (0–100) contextuel, 
 - **AC-COST-01 :** Économies calculées avec prix AWS du jour (±5% tolérance sur conversion de devise).
 - **AC-COST-02 :** Alerte de pic de coût envoyée en < 15 minutes après détection d'une anomalie > 30% vs moyenne.
 - **AC-COST-03 :** Graphique 90 jours de données charge en < 2 secondes.
-
----
 
 ## 8. Module 6 — Compliance as Code (OPA/Rego)
 
@@ -325,8 +319,6 @@ deny[msg] {
 - **AC-COMP-01 :** Évaluation des 25 règles de compliance (phase 2) en < 500ms par compte.
 - **AC-COMP-02 :** Rapport PDF de conformité généré et téléchargeable en < 10 secondes.
 - **AC-COMP-03 :** Ajout d'une nouvelle règle Rego sans redéploiement applicatif (hot-reload OPA bundle).
-
----
 
 ## 9. Module 7 — Remédiation "One-Click Safe"
 
@@ -373,8 +365,6 @@ Ce choix est une décision de risk management délibérée : appliquer du Terraf
 - **AC-REM-03 :** Minimum 2 actions distinctes requises avant toute exécution en production (clic + confirmation modale).
 - **AC-REM-04 :** Le plan Terraform est présenté en langage humanisé en plus du raw output.
 
----
-
 ## 10. Module 8 — Dashboard et Reporting
 
 ### 10.1 Métriques Affichées
@@ -401,8 +391,6 @@ Ce choix est une décision de risk management délibérée : appliquer du Terraf
 - **AC-DASH-02 :** Rafraîchissement temps réel pendant scan (latence SSE Datastar < 500ms).
 - **AC-DASH-03 :** Rapport PDF correct sur Chrome, Firefox, Safari, Edge, mobile Chrome.
 
----
-
 ## 11. Module 9 — Alertes et Notifications
 
 ### 11.1 Types d'Alertes
@@ -420,8 +408,6 @@ Ce choix est une décision de risk management délibérée : appliquer du Terraf
 - **AC-ALERT-01 :** Notification email pour vulnérabilité critique reçue en < 5 minutes.
 - **AC-ALERT-02 :** Templates email HTML responsive lisibles sur mobile.
 - **AC-ALERT-03 :** Désabonnement à un type d'alerte effectif immédiatement, sans reconnexion.
-
----
 
 ## 12. Module 10 — Routes HTTP *(Phase 2)*
 
@@ -444,8 +430,6 @@ Ce choix est une décision de risk management délibérée : appliquer du Terraf
 - **AC-Router-01 :** Réponses JSON avec champ `request_id` pour traçabilité.
 - **AC-Router-02 :** Rate limiting à 100 req/min par session, header `X-RateLimit-Remaining` dans chaque réponse.
 
----
-
 ## 13. Contraintes Non-Fonctionnelles
 
 | Catégorie | Contrainte | Seuil |
@@ -460,8 +444,6 @@ Ce choix est une décision de risk management délibérée : appliquer du Terraf
 | RGPD | Hébergement | Responsabilité du client (self-hosted) |
 | Audit | Rétention logs d'actions | 12 mois minimum |
 
----
-
 ## 14. Questions Ouvertes / Décisions à Prendre
 
 | # | Question | Impact | Deadline |
@@ -471,15 +453,11 @@ Ce choix est une décision de risk management délibérée : appliquer du Terraf
 | QO03 | Isolation Terraform state : par client ou par compte cloud ? | Sécurité + coût | Phase 2 |
 | QO04 | Programme feedback ML : DPA RGPD à rédiger avec un juriste | Légal | Phase 3 |
 
----
-
 ## 15. Historique des Versions
 
 | Version | Date | Auteur | Résumé des changements |
 |---|---|---|---|
 | v1.0 | 2025-07-10 | Équipe CIRA | Création initiale — 10 modules, stack technique, critères d'acceptance. Statut : Draft. |
 | v4.0 | 2026-05-06 | Équipe CIRA | Abandon GraphQL → HTTP natif. Abandon React + Apollo → Templ + Datastar. Abandon JWT → sessions cookie scs + Redis. Ajout routes SSE. Suppression contrainte hébergement EU (self-hosted client). Mise à jour SP (202 SP, 808h, 20 semaines). |
-
----
 
 *CIRA — Cloud Infrastructure Realtime Analysis | Document projet interne*

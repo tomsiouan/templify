@@ -3,6 +3,7 @@ package main
 import (
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/tomsiouan/templify/pkg/config"
 	"github.com/tomsiouan/templify/pkg/parser"
@@ -56,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := renderer.ToPDF(html, flags.Output); err != nil {
+	if err := renderer.ToPDF(html, flags.Output, filepath.Dir(flags.Input)); err != nil {
 		slog.Error("render failed", "err", err)
 		os.Exit(1)
 	}

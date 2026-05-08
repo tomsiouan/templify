@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/yuin/goldmark"
 	meta "github.com/yuin/goldmark-meta"
-	gast "github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
@@ -62,17 +63,17 @@ func Parse(data []byte) (*Document, error) {
 	root := md.Parser().Parse(reader, parser.WithContext(ctx))
 
 	var toc []TocEntry
-	_ = gast.Walk(root, func(n gast.Node, entering bool) (gast.WalkStatus, error) {
-		h, ok := n.(*gast.Heading)
+	_ = ast.Walk(root, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		h, ok := n.(*ast.Heading)
 		if !ok || !entering || h.Level > 6 {
-			return gast.WalkContinue, nil
+			return ast.WalkContinue, nil
 		}
 		id := ""
 		if v, exists := h.Attribute([]byte("id")); exists {
 			id = string(v.([]byte))
 		}
 		toc = append(toc, TocEntry{Level: h.Level, Text: headingText(h, data), ID: id})
-		return gast.WalkContinue, nil
+		return ast.WalkContinue, nil
 	})
 
 	var buf bytes.Buffer
@@ -83,7 +84,7 @@ func Parse(data []byte) (*Document, error) {
 	metaData := meta.Get(ctx)
 
 	doc := &Document{
-		Body: template.HTML(buf.String()),
+		Body: template.HTML(wrapImageCaptions(buf.String())),
 		Meta: metaData,
 		TOC:  toc,
 	}
@@ -101,19 +102,32 @@ func Parse(data []byte) (*Document, error) {
 	return doc, nil
 }
 
-func headingText(n gast.Node, source []byte) string {
+var reImgTitle = regexp.MustCompile(`(<img\b[^>]*\btitle="([^"]*)"[^>]*>)`)
+
+// wrapImageCaptions wraps <img title="..."> with <figure><figcaption> when a title is present.
+func wrapImageCaptions(html string) string {
+	return reImgTitle.ReplaceAllStringFunc(html, func(img string) string {
+		m := reImgTitle.FindStringSubmatch(img)
+		if m[2] == "" {
+			return img
+		}
+		return "<figure>" + m[1] + "<figcaption>" + m[2] + "</figcaption></figure>"
+	})
+}
+
+func headingText(n ast.Node, source []byte) string {
 	var sb strings.Builder
-	_ = gast.Walk(n, func(node gast.Node, entering bool) (gast.WalkStatus, error) {
+	_ = ast.Walk(n, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
-			return gast.WalkContinue, nil
+			return ast.WalkContinue, nil
 		}
 		switch v := node.(type) {
-		case *gast.Text:
+		case *ast.Text:
 			sb.Write(v.Segment.Value(source))
-		case *gast.String:
+		case *ast.String:
 			sb.Write(v.Value)
 		}
-		return gast.WalkContinue, nil
+		return ast.WalkContinue, nil
 	})
 	return strings.TrimSpace(sb.String())
 }
