@@ -7,8 +7,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="{{.Config.Font.URL}}" rel="stylesheet" />
-        {{end}}
-        {{.ConfigCSS}}
+        {{end}} {{.ConfigCSS}}
         <style>
             /* ── Reset ── */
             *,
@@ -369,6 +368,7 @@
        TABLE OF CONTENTS
     ════════════════════════════════════════ */
             .toc-page {
+                page: toc;
                 page-break-after: always;
                 padding-top: 2mm;
             }
@@ -436,13 +436,11 @@
         </style>
     </head>
     <body>
-        {{.CoverHTML}}
-
-        {{if and .Config.BlankPage .TOC}}<div class="blank-page"></div>{{end}}
-
-        {{if .TOC}}
+        {{.CoverHTML}} {{if and .Config.BlankPage .TOC}}
+        <div class="blank-page"></div>
+        {{end}} {{if .TOC}}
         <div class="toc-page">
-            <div class="toc-heading">Table des matières</div>
+            <div class="toc-heading">Sommaire</div>
             <nav class="toc">
                 {{range .TOC}}
                 <a href="#{{.ID}}" class="toc-entry toc-level-{{.Level}}">
@@ -452,9 +450,9 @@
                 {{end}}
             </nav>
         </div>
+        <div class="blank-page"></div>
         {{end}}
 
         <div class="content">{{.Body}}</div>
-
     </body>
 </html>

@@ -131,6 +131,11 @@ func buildConfigCSS(cfg *config.Config) template.HTML {
 		cfg.Page.Margins.Top, cfg.Page.Margins.Right,
 		cfg.Page.Margins.Bottom, cfg.Page.Margins.Left,
 		suppressAllMarginBoxes())
+	fmt.Fprintf(&sb, "@page toc { size: %s; margin: %s %s %s %s; %s }\n\n",
+		cfg.Page.Size,
+		cfg.Page.Margins.Top, cfg.Page.Margins.Right,
+		cfg.Page.Margins.Bottom, cfg.Page.Margins.Left,
+		suppressAllMarginBoxes())
 
 	fmt.Fprintf(&sb, "body {\n")
 	fmt.Fprintf(&sb, "    font-family: \"%s\", sans-serif;\n", cfg.Font.Family)
