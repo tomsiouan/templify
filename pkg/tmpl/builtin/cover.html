@@ -1,0 +1,28 @@
+{{if .Title}}
+<div class="cover">
+    <div class="cover-top">
+        <span class="cover-doctype">{{if index .Meta "doctype"}}{{index .Meta "doctype"}}{{else}}Document{{end}}</span>
+        {{if index .Meta "version"}}<span class="cover-version">{{index .Meta "version"}}</span>{{end}}
+    </div>
+
+    <div class="cover-body">
+        <div class="cover-accent"></div>
+        <h1>{{.Title}}</h1>
+        {{if index .Meta "subtitle"}}
+        <p class="cover-subtitle">{{index .Meta "subtitle"}}</p>
+        {{end}}
+    </div>
+
+    <div class="cover-bottom">
+        {{if .Author}}
+        <div class="cover-meta-line"><strong>Auteur :</strong> {{.Author}}</div>
+        {{end}}
+        {{if index .Meta "company"}}
+        <div class="cover-meta-line"><strong>Société :</strong> {{index .Meta "company"}}</div>
+        {{end}}
+        {{if .Date}}
+        <div class="cover-meta-line"><strong>Date :</strong> {{.Date}}</div>
+        {{end}}
+    </div>
+</div>
+{{end}}

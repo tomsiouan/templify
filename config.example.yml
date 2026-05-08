@@ -38,9 +38,19 @@ toc:
   enabled: true
   max_depth: 2
 
-page_numbers:
+header:
+  enabled: false
+  background: ""   # CSS background value, supports gradients e.g. "linear-gradient(to right, #1e293b, #475569)"
+  left: ""
+  center: ""
+  right: ""
+
+footer:
   enabled: true
-  format: "{page} / {pages}"
+  background: ""   # CSS background value, supports gradients
+  left: ""
+  center: ""
+  right: "{page} / {pages}"   # supports {page} and {pages} tokens
 
 blank_page: false
 
@@ -50,3 +60,7 @@ colors:
   background: "#f8fafc"
   text: "#0f172a"
   text_muted: "#64748b"
+
+cover:
+  enabled: true
+  template: ""   # path to a custom cover .html template (relative to this config file)

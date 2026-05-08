@@ -17,6 +17,11 @@ import (
 var builtinFS embed.FS
 
 func Render(name string, doc *parser.Document, cfg *config.Config) (string, error) {
+	coverHTML, err := renderCover(doc, cfg)
+	if err != nil {
+		return "", err
+	}
+
 	content, err := loadTemplate(name)
 	if err != nil {
 		return "", err
@@ -31,7 +36,8 @@ func Render(name string, doc *parser.Document, cfg *config.Config) (string, erro
 		*parser.Document
 		Config    *config.Config
 		ConfigCSS template.HTML
-	}{doc, cfg, buildConfigCSS(cfg)}
+		CoverHTML template.HTML
+	}{doc, cfg, buildConfigCSS(cfg), coverHTML}
 
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, data); err != nil {
@@ -39,6 +45,45 @@ func Render(name string, doc *parser.Document, cfg *config.Config) (string, erro
 	}
 
 	return buf.String(), nil
+}
+
+func renderCover(doc *parser.Document, cfg *config.Config) (template.HTML, error) {
+	if !cfg.Cover.Enabled {
+		return "", nil
+	}
+
+	var content string
+	if cfg.Cover.Template != "" {
+		path := cfg.ResolvePath(cfg.Cover.Template)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return "", fmt.Errorf("read cover template %q: %w", path, err)
+		}
+		content = string(data)
+	} else {
+		data, err := builtinFS.ReadFile("builtin/cover.html")
+		if err != nil {
+			return "", fmt.Errorf("read built-in cover: %w", err)
+		}
+		content = string(data)
+	}
+
+	t, err := template.New("cover").Parse(content)
+	if err != nil {
+		return "", fmt.Errorf("parse cover template: %w", err)
+	}
+
+	data := struct {
+		*parser.Document
+		Config *config.Config
+	}{doc, cfg}
+
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, data); err != nil {
+		return "", fmt.Errorf("execute cover template: %w", err)
+	}
+
+	return template.HTML(buf.String()), nil
 }
 
 func loadTemplate(name string) (string, error) {
@@ -75,21 +120,17 @@ func buildConfigCSS(cfg *config.Config) template.HTML {
 	fmt.Fprintf(&sb, "    margin: %s %s %s %s;\n",
 		cfg.Page.Margins.Top, cfg.Page.Margins.Right,
 		cfg.Page.Margins.Bottom, cfg.Page.Margins.Left)
-	if cfg.PageNumbers.Enabled {
-		fmt.Fprintf(&sb, "    @bottom-right {\n")
-		fmt.Fprintf(&sb, "        content: %s;\n", config.PageNumberCSS(cfg.PageNumbers.Format))
-		fmt.Fprintf(&sb, "        font-family: \"%s\", sans-serif;\n", cfg.Font.Family)
-		fmt.Fprintf(&sb, "        font-size: 8.5pt;\n")
-		fmt.Fprintf(&sb, "        color: var(--blue-light);\n")
-		fmt.Fprintf(&sb, "    }\n")
-	}
+	writeMarginBoxes(&sb, cfg)
 	fmt.Fprintf(&sb, "}\n\n")
 
-	fmt.Fprintf(&sb, "@page cover { size: %s; margin: 0; @bottom-right { content: none; } }\n", cfg.Page.Size)
-	fmt.Fprintf(&sb, "@page blank { size: %s; margin: %s %s %s %s; @bottom-right { content: none; } }\n\n",
+	// Named pages: suppress all header/footer bands.
+	fmt.Fprintf(&sb, "@page cover { size: %s; margin: 0; %s }\n",
+		cfg.Page.Size, suppressAllMarginBoxes())
+	fmt.Fprintf(&sb, "@page blank { size: %s; margin: %s %s %s %s; %s }\n\n",
 		cfg.Page.Size,
 		cfg.Page.Margins.Top, cfg.Page.Margins.Right,
-		cfg.Page.Margins.Bottom, cfg.Page.Margins.Left)
+		cfg.Page.Margins.Bottom, cfg.Page.Margins.Left,
+		suppressAllMarginBoxes())
 
 	fmt.Fprintf(&sb, "body {\n")
 	fmt.Fprintf(&sb, "    font-family: \"%s\", sans-serif;\n", cfg.Font.Family)
@@ -122,6 +163,90 @@ func buildConfigCSS(cfg *config.Config) template.HTML {
 		sb.WriteString(" }\n")
 	}
 
+	// Full-width background bands via ::before pseudo-element on the margin container.
+	// The pagebox grid has no overflow:hidden, so the pseudo-element can extend into the
+	// left/right margin columns using negative offsets = the page margin variables.
+	// Cells sit above the pseudo-element via z-index; text aligns with content column.
+	if cfg.Header.Enabled && cfg.Header.Background != "" {
+		fmt.Fprintf(&sb, ".pagedjs_margin-top { position: relative; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-top::before {\n")
+		fmt.Fprintf(&sb, "    content: \"\";\n")
+		fmt.Fprintf(&sb, "    position: absolute;\n")
+		fmt.Fprintf(&sb, "    top: 3mm; height: 8mm;\n")
+		fmt.Fprintf(&sb, "    left: calc(-1 * var(--pagedjs-margin-left));\n")
+		fmt.Fprintf(&sb, "    right: calc(-1 * var(--pagedjs-margin-right));\n")
+		fmt.Fprintf(&sb, "    background: %s;\n", cfg.Header.Background)
+		fmt.Fprintf(&sb, "    z-index: 0;\n")
+		fmt.Fprintf(&sb, "}\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-top .pagedjs_margin { background: transparent; position: relative; z-index: 1; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-top .pagedjs_margin-content { position: absolute; top: 3mm; height: 8mm; display: flex; align-items: center; left: 0; right: 0; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-top-left .pagedjs_margin-content { justify-content: flex-start; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-top-center .pagedjs_margin-content { justify-content: center; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-top-right .pagedjs_margin-content { justify-content: flex-end; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_named_page .pagedjs_margin-top::before, .pagedjs_blank_page .pagedjs_margin-top::before { display: none; }\n\n")
+	}
+	if cfg.Footer.Enabled && cfg.Footer.Background != "" {
+		fmt.Fprintf(&sb, ".pagedjs_margin-bottom { position: relative; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-bottom::before {\n")
+		fmt.Fprintf(&sb, "    content: \"\";\n")
+		fmt.Fprintf(&sb, "    position: absolute;\n")
+		fmt.Fprintf(&sb, "    bottom: 3mm; height: 8mm;\n")
+		fmt.Fprintf(&sb, "    left: calc(-1 * var(--pagedjs-margin-left));\n")
+		fmt.Fprintf(&sb, "    right: calc(-1 * var(--pagedjs-margin-right));\n")
+		fmt.Fprintf(&sb, "    background: %s;\n", cfg.Footer.Background)
+		fmt.Fprintf(&sb, "    z-index: 0;\n")
+		fmt.Fprintf(&sb, "}\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-bottom .pagedjs_margin { background: transparent; position: relative; z-index: 1; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-bottom .pagedjs_margin-content { position: absolute; bottom: 3mm; height: 8mm; display: flex; align-items: center; left: 0; right: 0; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-bottom-left .pagedjs_margin-content { justify-content: flex-start; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-bottom-center .pagedjs_margin-content { justify-content: center; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_margin-bottom-right .pagedjs_margin-content { justify-content: flex-end; }\n")
+		fmt.Fprintf(&sb, ".pagedjs_named_page .pagedjs_margin-bottom::before, .pagedjs_blank_page .pagedjs_margin-bottom::before { display: none; }\n\n")
+	}
+
 	sb.WriteString("</style>")
 	return template.HTML(sb.String())
+}
+
+func writeMarginBoxes(sb *strings.Builder, cfg *config.Config) {
+	hdr := cfg.Header
+	ftr := cfg.Footer
+	hStyle := marginBoxStyle(cfg.Font.Family, hdr.Background != "")
+	fStyle := marginBoxStyle(cfg.Font.Family, ftr.Background != "")
+
+	if hdr.Enabled {
+		fmt.Fprintf(sb, "    @top-left    { content: %s; %s text-align: left; }\n", config.ContentCSS(hdr.Left), hStyle)
+		fmt.Fprintf(sb, "    @top-center  { content: %s; %s text-align: center; }\n", config.ContentCSS(hdr.Center), hStyle)
+		fmt.Fprintf(sb, "    @top-right   { content: %s; %s text-align: right; }\n", config.ContentCSS(hdr.Right), hStyle)
+	} else {
+		sb.WriteString("    @top-left { content: none; } @top-center { content: none; } @top-right { content: none; }\n")
+	}
+
+	if ftr.Enabled {
+		fmt.Fprintf(sb, "    @bottom-left   { content: %s; %s text-align: left; }\n", config.ContentCSS(ftr.Left), fStyle)
+		fmt.Fprintf(sb, "    @bottom-center { content: %s; %s text-align: center; }\n", config.ContentCSS(ftr.Center), fStyle)
+		fmt.Fprintf(sb, "    @bottom-right  { content: %s; %s text-align: right; }\n", config.ContentCSS(ftr.Right), fStyle)
+	} else {
+		sb.WriteString("    @bottom-left { content: none; } @bottom-center { content: none; } @bottom-right { content: none; }\n")
+	}
+}
+
+func marginBoxStyle(fontFamily string, hasBackground bool) string {
+	color := "var(--text-muted)"
+	if hasBackground {
+		color = "rgba(255,255,255,0.9)"
+	}
+	return fmt.Sprintf(`font-family: "%s", sans-serif; font-size: 8pt; color: %s;`, fontFamily, color)
+}
+
+func suppressAllMarginBoxes() string {
+	boxes := []string{
+		"@top-left", "@top-center", "@top-right",
+		"@bottom-left", "@bottom-center", "@bottom-right",
+	}
+	var parts []string
+	for _, b := range boxes {
+		parts = append(parts, b+" { content: none; }")
+	}
+	return strings.Join(parts, " ")
 }

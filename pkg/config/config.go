@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -47,9 +48,14 @@ type TOCConfig struct {
 	MaxDepth int  `yaml:"max_depth"`
 }
 
-type PageNumbersConfig struct {
-	Enabled bool   `yaml:"enabled"`
-	Format  string `yaml:"format"`
+// HeaderFooterConfig configures a header or footer band on every page.
+// Left/Center/Right accept plain text or {page}/{pages} tokens.
+type HeaderFooterConfig struct {
+	Enabled    bool   `yaml:"enabled"`
+	Background string `yaml:"background"`
+	Left       string `yaml:"left"`
+	Center     string `yaml:"center"`
+	Right      string `yaml:"right"`
 }
 
 type ColorsConfig struct {
@@ -60,15 +66,31 @@ type ColorsConfig struct {
 	TextMuted    string `yaml:"text_muted"`
 }
 
+type CoverConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	Template string `yaml:"template"`
+}
+
 type Config struct {
-	Page        PageConfig        `yaml:"page"`
-	Font        FontConfig        `yaml:"font"`
-	Headings    HeadingsConfig    `yaml:"headings"`
-	Justify     bool              `yaml:"justify"`
-	TOC         TOCConfig         `yaml:"toc"`
-	PageNumbers PageNumbersConfig `yaml:"page_numbers"`
-	BlankPage   bool              `yaml:"blank_page"`
-	Colors      ColorsConfig      `yaml:"colors"`
+	Page      PageConfig         `yaml:"page"`
+	Font      FontConfig         `yaml:"font"`
+	Headings  HeadingsConfig     `yaml:"headings"`
+	Justify   bool               `yaml:"justify"`
+	TOC       TOCConfig          `yaml:"toc"`
+	Header    HeaderFooterConfig `yaml:"header"`
+	Footer    HeaderFooterConfig `yaml:"footer"`
+	BlankPage bool               `yaml:"blank_page"`
+	Colors    ColorsConfig       `yaml:"colors"`
+	Cover     CoverConfig        `yaml:"cover"`
+	dir       string
+}
+
+// ResolvePath resolves a path relative to the config file's directory.
+func (c *Config) ResolvePath(p string) string {
+	if filepath.IsAbs(p) || c.dir == "" {
+		return p
+	}
+	return filepath.Join(c.dir, p)
 }
 
 func Default() *Config {
@@ -101,9 +123,12 @@ func Default() *Config {
 			Enabled:  true,
 			MaxDepth: 2,
 		},
-		PageNumbers: PageNumbersConfig{
+		Header: HeaderFooterConfig{
+			Enabled: false,
+		},
+		Footer: HeaderFooterConfig{
 			Enabled: true,
-			Format:  "{page} / {pages}",
+			Right:   "{page} / {pages}",
 		},
 		BlankPage: false,
 		Colors: ColorsConfig{
@@ -112,6 +137,9 @@ func Default() *Config {
 			Background:   "#f8fafc",
 			Text:         "#0f172a",
 			TextMuted:    "#64748b",
+		},
+		Cover: CoverConfig{
+			Enabled: true,
 		},
 	}
 }
@@ -125,31 +153,35 @@ func Load(path string) (*Config, error) {
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("parse config %q: %w", path, err)
 	}
+	cfg.dir = filepath.Dir(path)
 	return cfg, nil
 }
 
-// PageNumberCSS converts a format string like "{page} / {pages}" to a CSS content value
-// e.g. counter(page) " / " counter(pages)
-func PageNumberCSS(format string) string {
+// ContentCSS converts a header/footer slot value to a CSS content value.
+// Empty string produces `""`. Tokens {page} and {pages} become CSS counters.
+func ContentCSS(s string) string {
+	if s == "" {
+		return `""`
+	}
 	re := regexp.MustCompile(`\{page\}|\{pages\}`)
 	var sb strings.Builder
 	last := 0
-	for _, m := range re.FindAllStringIndex(format, -1) {
+	for _, m := range re.FindAllStringIndex(s, -1) {
 		if m[0] > last {
 			sb.WriteString(`"`)
-			sb.WriteString(format[last:m[0]])
+			sb.WriteString(s[last:m[0]])
 			sb.WriteString(`" `)
 		}
-		if format[m[0]:m[1]] == "{page}" {
+		if s[m[0]:m[1]] == "{page}" {
 			sb.WriteString("counter(page) ")
 		} else {
 			sb.WriteString("counter(pages) ")
 		}
 		last = m[1]
 	}
-	if last < len(format) {
+	if last < len(s) {
 		sb.WriteString(`"`)
-		sb.WriteString(format[last:])
+		sb.WriteString(s[last:])
 		sb.WriteString(`"`)
 	}
 	return strings.TrimSpace(sb.String())
