@@ -5,6 +5,11 @@ author: Équipe CIRA
 date: Mai 2026
 doctype: Document Projet Interne
 version: v4.0
+header:
+  left: "CIRA"
+  right: "SPÉCIFICATIONS FONCTIONNELLES"
+footer:
+  right: "{page} / {pages}"
 ---
 
 | Information | Valeur |
@@ -20,26 +25,6 @@ version: v4.0
 ## Résumé Exécutif
 
 Ce document constitue la référence technique et fonctionnelle du projet CIRA. Il décrit, fonctionnalité par fonctionnalité, ce que le système doit faire (spécifications fonctionnelles), comment il doit le faire (spécifications techniques), ainsi que les contraintes, dépendances et interfaces associées. Il intègre les arbitrages validés : remédiation "one-click safe" avec approval obligatoire en v1, multi-cloud AWS+Azure en phase 2 (GCP phase 3), Compliance as Code via OPA/Rego, boucle de feedback ML dès la phase 3, frontend server-side rendering Templ + Datastar (sans React ni GraphQL), et sessions cookie via alexedwards/scs + Redis (sans JWT).
-
----
-
-## Table des Matières
-
-1. Périmètre et Contexte
-2. Architecture Générale
-3. Module 1 — Authentification
-4. Module 2 — Connexion Cloud AWS + Azure
-5. Module 3 — Scanner CSPM (open-source)
-6. Module 4 — Scoring IA LightGBM
-7. Module 5 — Analyse des Coûts
-8. Module 6 — Compliance as Code OPA/Rego
-9. Module 7 — Remédiation One-Click Safe
-10. Module 8 — Dashboard et Reporting
-11. Module 9 — Alertes et Notifications
-12. Module 10 — API Publique
-13. Contraintes Non-Fonctionnelles
-14. Questions Ouvertes
-15. Historique des Versions
 
 ---
 

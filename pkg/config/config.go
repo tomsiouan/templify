@@ -85,6 +85,54 @@ type Config struct {
 	dir       string
 }
 
+// ApplyDocMeta overrides header/footer Left/Center/Right from the document's front matter.
+// Front matter keys "header" and "footer" accept the same left/center/right sub-keys.
+func (c *Config) ApplyDocMeta(meta map[string]any) {
+	if v, ok := meta["header"]; ok {
+		if m := toStringMap(v); m != nil {
+			if s, ok := m["left"].(string); ok {
+				c.Header.Left = s
+			}
+			if s, ok := m["center"].(string); ok {
+				c.Header.Center = s
+			}
+			if s, ok := m["right"].(string); ok {
+				c.Header.Right = s
+			}
+		}
+	}
+	if v, ok := meta["footer"]; ok {
+		if m := toStringMap(v); m != nil {
+			if s, ok := m["left"].(string); ok {
+				c.Footer.Left = s
+			}
+			if s, ok := m["center"].(string); ok {
+				c.Footer.Center = s
+			}
+			if s, ok := m["right"].(string); ok {
+				c.Footer.Right = s
+			}
+		}
+	}
+}
+
+// toStringMap converts map[interface{}]interface{} (yaml.v2) or map[string]any to map[string]any.
+func toStringMap(v any) map[string]any {
+	switch m := v.(type) {
+	case map[string]any:
+		return m
+	case map[interface{}]interface{}:
+		out := make(map[string]any, len(m))
+		for k, v := range m {
+			if ks, ok := k.(string); ok {
+				out[ks] = v
+			}
+		}
+		return out
+	}
+	return nil
+}
+
 // ResolvePath resolves a path relative to the config file's directory.
 func (c *Config) ResolvePath(p string) string {
 	if filepath.IsAbs(p) || c.dir == "" {

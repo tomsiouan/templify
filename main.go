@@ -36,6 +36,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	cfg.ApplyDocMeta(doc.Meta)
+
 	if cfg.TOC.Enabled {
 		filtered := doc.TOC[:0]
 		for _, e := range doc.TOC {

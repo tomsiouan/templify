@@ -211,8 +211,8 @@ func buildConfigCSS(cfg *config.Config) template.HTML {
 func writeMarginBoxes(sb *strings.Builder, cfg *config.Config) {
 	hdr := cfg.Header
 	ftr := cfg.Footer
-	hStyle := marginBoxStyle(cfg.Font.Family, hdr.Background != "")
-	fStyle := marginBoxStyle(cfg.Font.Family, ftr.Background != "")
+	hStyle := marginBoxStyle(cfg.Font.Family)
+	fStyle := marginBoxStyle(cfg.Font.Family)
 
 	if hdr.Enabled {
 		fmt.Fprintf(sb, "    @top-left    { content: %s; %s text-align: left; }\n", config.ContentCSS(hdr.Left), hStyle)
@@ -231,12 +231,8 @@ func writeMarginBoxes(sb *strings.Builder, cfg *config.Config) {
 	}
 }
 
-func marginBoxStyle(fontFamily string, hasBackground bool) string {
-	color := "var(--text-muted)"
-	if hasBackground {
-		color = "rgba(255,255,255,0.9)"
-	}
-	return fmt.Sprintf(`font-family: "%s", sans-serif; font-size: 8pt; color: %s;`, fontFamily, color)
+func marginBoxStyle(fontFamily string) string {
+	return fmt.Sprintf(`font-family: "%s", sans-serif; font-size: 8pt; color: var(--text-muted);`, fontFamily)
 }
 
 func suppressAllMarginBoxes() string {
