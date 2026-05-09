@@ -21,7 +21,7 @@ templify -input document.md -template custom.html -output document.pdf
 
 ## Configuration
 
-All visual options are controlled via a YAML config file. See [`config.example.yml`](config.example.yml) for a full reference.
+All visual options are controlled via a YAML config file.
 
 ```yaml
 page:
@@ -53,6 +53,13 @@ toc:
   max_depth: 3
   exclude:                # headings to omit from the TOC entirely
     - Remerciements
+  pre_toc:                # sections extracted from body and placed before the TOC
+    - Remerciements
+
+references:
+  bibliography: "Bibliographie"       # h2 heading of the bibliography section
+  sitography: "Sitographie"           # h2 heading of the sitography section
+  figures: "Table des illustrations"  # h2 heading to replace with the auto-generated table of figures
 
 header:
   enabled: true
@@ -62,6 +69,8 @@ header:
 footer:
   enabled: true
   background: ""
+
+blank_page: true          # insert a blank page before the TOC (double-sided printing)
 
 colors:
   primary: "#1e293b"
@@ -101,13 +110,46 @@ Content starts here.
 ## Markdown features
 
 - **GFM** — tables, strikethrough, task lists
-- **Footnotes** and **definition lists**
+- **Footnotes** — rendered at the bottom of the page where the reference appears
+- **Definition lists**
 - **Typographer** — smart quotes, dashes
-- **Image captions** — set the image title to render a `<figcaption>`:
+- **Image captions** — set the image `title` attribute to render a `<figcaption>`:
   ```markdown
   ![alt text](image.png "This becomes the caption")
   ```
 - **Auto heading IDs** — used for TOC anchor links
+
+## Back matter
+
+### Table of figures
+
+Set `references.figures` to the h2 heading text in your document. The tool replaces the section's content with an auto-generated table (dotted leaders, page numbers resolved at render time):
+
+```markdown
+## Table des illustrations
+
+<!-- content is replaced automatically -->
+```
+
+### Bibliography & sitography
+
+Set `references.bibliography` and/or `references.sitography` to the corresponding h2 heading texts. List items are formatted as `[n]` numbered references.
+
+Use **ordered lists** so the numbers are visible in your source — you can then reference `[3]` in the text without guessing:
+
+```markdown
+## Bibliographie
+
+1. CommonMark Spec — [spec.commonmark.org](https://spec.commonmark.org)
+2. CSS Paged Media Module Level 3 — W3C Working Draft
+
+## Sitographie
+
+3. goldmark : [github.com/yuin/goldmark](https://github.com/yuin/goldmark)
+4. paged.js : [pagedjs.org](https://pagedjs.org)
+```
+
+For sitography, any `http(s)` link in a list item is automatically moved to a new line below the entry title. Optional h3 sub-sections are supported — numbering is continuous across all sub-sections.
 
 ## Custom templates
 
@@ -115,12 +157,14 @@ Pass a `.html` file path to `-template` to use a fully custom template. Template
 
 ```go
 type Document struct {
-    Title  string
-    Author string
-    Date   string
-    Body   template.HTML    // rendered HTML body (do not re-escape)
-    Meta   map[string]any   // all front matter fields
-    TOC    []TocEntry
+    Title   string
+    Author  string
+    Date    string
+    Body    template.HTML    // rendered HTML body (do not re-escape)
+    PreTOC  template.HTML    // pre-TOC sections extracted from body
+    Meta    map[string]any   // all front matter fields
+    TOC     []TocEntry
+    Figures []FigureEntry
 }
 
 type TocEntry struct {
@@ -128,6 +172,11 @@ type TocEntry struct {
     Text     string
     ID       string
     NoNumber bool            // true when excluded from heading_numbers
+}
+
+type FigureEntry struct {
+    ID      string           // e.g. "fig-1"
+    Caption string
 }
 ```
 
