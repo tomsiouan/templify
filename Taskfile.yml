@@ -1,0 +1,15 @@
+version: "3"
+
+tasks:
+  build:
+    cmds:
+      - go build -o build ./...
+
+  run:
+    cmds:
+      - ./build/templify -input example.md -output example.pdf -config ./config.yml
+
+  default:
+    cmds:
+      - task: build
+      - task: run

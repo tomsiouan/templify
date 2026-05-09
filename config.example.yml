@@ -1,0 +1,73 @@
+page:
+  size: A4
+  margins:
+    top: 25mm
+    right: 20mm
+    bottom: 25mm
+    left: 25mm
+
+font:
+  family: Inter
+  url: https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap
+  size: 11pt
+  line_height: 1.6
+
+headings:
+  h1:
+    size: 24pt
+    page_break_before: false
+  h2:
+    size: 18pt
+    page_break_before: false
+  h3:
+    size: 14pt
+    page_break_before: false
+  h4:
+    size: 12pt
+    page_break_before: false
+  h5:
+    size: 11pt
+    page_break_before: false
+  h6:
+    size: 10pt
+    page_break_before: false
+
+justify: false
+paragraph_indent: 13mm
+heading_indent: "" # indentation step per sub-level: h3 = 1×, h4 = 2×, h5 = 3× (e.g. "5mm")
+heading_numbers:
+  enabled: false # prefix h2+ with 1 / 1.1 / 1.1.1 counters (also applied to TOC)
+  exclude: [] # heading texts that must not be numbered (e.g. Introduction, Conclusion)
+
+toc:
+  enabled: true
+  max_depth: 2
+  exclude: []   # heading texts to omit from the TOC entirely (e.g. Remerciements)
+  pre_toc: []   # heading texts to extract from body and place before the TOC (e.g. Remerciements)
+
+header:
+  enabled: false
+  background: "" # CSS background value, supports gradients e.g. "linear-gradient(to right, #1e293b, #475569)"
+  left: ""
+  center: ""
+  right: ""
+
+footer:
+  enabled: true
+  background: "" # CSS background value, supports gradients
+  left: ""
+  center: ""
+  right: "{page} / {pages}" # supports {page} and {pages} tokens
+
+blank_page: false
+
+colors:
+  primary: "#1e293b"
+  primary_light: "#475569"
+  background: "#f8fafc"
+  text: "#0f172a"
+  text_muted: "#64748b"
+
+cover:
+  enabled: true
+  template: "" # path to a custom cover .html template (relative to this config file)
