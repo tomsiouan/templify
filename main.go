@@ -62,6 +62,10 @@ func main() {
 	parser.ExtractPreTOC(doc, cfg.TOC.PreTOC)
 	parser.InlineFootnotes(doc)
 
+	parser.ProcessFigures(doc)
+	parser.GenerateFigureTable(doc, cfg.References.Figures)
+	parser.NumberReferences(doc, cfg.References.Bibliography, cfg.References.Sitography)
+
 	html, err := tmpl.Render(flags.Template, doc, cfg)
 	if err != nil {
 		slog.Error("template failed", "err", err)

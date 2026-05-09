@@ -21,7 +21,7 @@ window.PagedConfig = {
     auto: true,
     after: () => {
         // TOC page numbers
-        document.querySelectorAll('a.toc-entry[href]').forEach(entry => {
+        document.querySelectorAll('a.toc-entry[href], a.tof-entry[href]').forEach(entry => {
             const id = entry.getAttribute('href').slice(1);
             const target = document.getElementById(id);
             if (target) {

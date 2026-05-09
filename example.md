@@ -128,11 +128,11 @@ Ce fichier d'exemple couvre l'essentiel des constructions Markdown supportées p
 
 ## Bibliographie
 
-- CommonMark Spec — [spec.commonmark.org](https://spec.commonmark.org)
-- CSS Paged Media Module Level 3 — W3C Working Draft
+1. CommonMark Spec — [spec.commonmark.org](https://spec.commonmark.org)
+2. CSS Paged Media Module Level 3 — W3C Working Draft
 
 ## Sitographie
 
-- Documentation goldmark : [github.com/yuin/goldmark](https://github.com/yuin/goldmark)
-- paged.js : [pagedjs.org](https://pagedjs.org)
-- go-rod : [go-rod.github.io](https://go-rod.github.io)
+3. Documentation goldmark : [github.com/yuin/goldmark](https://github.com/yuin/goldmark)
+4. paged.js : [pagedjs.org](https://pagedjs.org)
+5. go-rod : [go-rod.github.io](https://go-rod.github.io)

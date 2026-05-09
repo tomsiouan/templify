@@ -495,6 +495,76 @@
                 color: var(--text-muted);
             }
 
+            /* ════════════════════════════════════════
+       REFERENCES (Bibliography / Sitography)
+    ════════════════════════════════════════ */
+            ul.ref-list {
+                list-style: none;
+                padding-left: 0;
+                margin: 0;
+            }
+
+            .ref-item {
+                display: flex;
+                gap: 3mm;
+                margin-bottom: 3mm;
+                break-inside: avoid;
+            }
+
+            .ref-n {
+                flex-shrink: 0;
+                font-weight: 600;
+                color: var(--blue);
+                min-width: 10mm;
+            }
+
+            .ref-body {
+                flex: 1;
+                word-break: break-word;
+            }
+
+            .ref-url {
+                display: block;
+                margin-top: 1mm;
+                font-size: 9.5pt;
+                color: var(--blue);
+                word-break: break-all;
+            }
+
+            /* ════════════════════════════════════════
+       TABLE OF FIGURES
+    ════════════════════════════════════════ */
+            .doc-tof {
+                display: flex;
+                flex-direction: column;
+                margin-top: 3mm;
+            }
+
+            .tof-entry {
+                display: flex;
+                align-items: baseline;
+                text-decoration: none;
+                color: var(--text);
+                margin-bottom: 3mm;
+                overflow: hidden;
+            }
+
+            .tof-entry-title {
+                white-space: nowrap;
+            }
+
+            .tof-entry-filler {
+                flex: 1;
+                border-bottom: 1px dotted var(--text-muted);
+                margin: 0 3mm 1.5mm;
+                opacity: 0.5;
+            }
+
+            .tof-entry::after {
+                content: attr(data-page);
+                font-variant-numeric: tabular-nums;
+            }
+
             @media print {
                 pre {
                     white-space: pre-wrap;

@@ -78,6 +78,12 @@ type CoverConfig struct {
 	Template string `yaml:"template"`
 }
 
+type ReferencesConfig struct {
+	Bibliography string `yaml:"bibliography"` // h2 heading text of the bibliography section
+	Sitography   string `yaml:"sitography"`   // h2 heading text of the sitography section
+	Figures      string `yaml:"figures"`      // h2 heading text for the auto-generated table of figures
+}
+
 type Config struct {
 	Page            PageConfig         `yaml:"page"`
 	Font            FontConfig         `yaml:"font"`
@@ -92,6 +98,7 @@ type Config struct {
 	BlankPage       bool               `yaml:"blank_page"`
 	Colors          ColorsConfig       `yaml:"colors"`
 	Cover           CoverConfig        `yaml:"cover"`
+	References      ReferencesConfig   `yaml:"references"`
 	dir             string
 }
 
