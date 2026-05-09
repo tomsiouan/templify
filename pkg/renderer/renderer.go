@@ -20,6 +20,7 @@ const pagedJSConfig = `<script>
 window.PagedConfig = {
     auto: true,
     after: () => {
+        // TOC page numbers
         document.querySelectorAll('a.toc-entry[href]').forEach(entry => {
             const id = entry.getAttribute('href').slice(1);
             const target = document.getElementById(id);
@@ -28,6 +29,25 @@ window.PagedConfig = {
                 if (page) entry.setAttribute('data-page', page.dataset.pageNumber);
             }
         });
+
+        // Footnotes: group hidden inline spans by page, then anchor them at page bottom
+        const pageFootnotes = new Map();
+        document.querySelectorAll('.pagedjs_page .footnote-note').forEach(note => {
+            const page = note.closest('.pagedjs_page');
+            if (!page) return;
+            if (!pageFootnotes.has(page)) pageFootnotes.set(page, []);
+            pageFootnotes.get(page).push(note.innerHTML);
+            note.remove();
+        });
+        pageFootnotes.forEach((items, page) => {
+            const area = page.querySelector('.pagedjs_area');
+            if (!area) return;
+            const box = document.createElement('div');
+            box.className = 'footnote-area';
+            box.innerHTML = items.map(c => '<p class="fn-item">' + c + '</p>').join('');
+            area.appendChild(box);
+        });
+
         window.__pagedDone = true;
     }
 };

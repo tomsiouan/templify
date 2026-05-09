@@ -136,7 +136,44 @@ func ExtractPreTOC(doc *Document, headings []string) {
 	}
 }
 
-var reImgTitle = regexp.MustCompile(`(<img\b[^>]*\btitle="([^"]*)"[^>]*>)`)
+var (
+	reImgTitle        = regexp.MustCompile(`(<img\b[^>]*\btitle="([^"]*)"[^>]*>)`)
+	reFootnoteSection = regexp.MustCompile(`(?s)<div class="footnotes"[^>]*>.*?</div>`)
+	reFootnoteLi      = regexp.MustCompile(`(?s)<li id="([^"]*fn:[^"]+)">\s*<p>(.*?)</p>`)
+	reFootnoteBackref = regexp.MustCompile(`\s*<a[^>]+class="footnote-backref"[^>]*>.*?</a>`)
+	reFootnoteRef     = regexp.MustCompile(`<sup id="[^"]*fnref:[^"]+"[^>]*><a href="#([^"]*fn:[^"]+)"[^>]*>(\d+)</a></sup>`)
+)
+
+// InlineFootnotes moves footnote content from the end-of-document section to
+// inline spans right after each reference superscript, then removes the section.
+func InlineFootnotes(doc *Document) {
+	body := string(doc.Body)
+	section := reFootnoteSection.FindString(body)
+	if section == "" {
+		return
+	}
+	fnContent := map[string]string{}
+	for _, m := range reFootnoteLi.FindAllStringSubmatch(section, -1) {
+		content := reFootnoteBackref.ReplaceAllString(m[2], "")
+		fnContent[m[1]] = strings.TrimSpace(content)
+	}
+	if len(fnContent) == 0 {
+		return
+	}
+	body = reFootnoteRef.ReplaceAllStringFunc(body, func(s string) string {
+		m := reFootnoteRef.FindStringSubmatch(s)
+		if m == nil {
+			return s
+		}
+		content, ok := fnContent[m[1]]
+		if !ok {
+			return s
+		}
+		return s + `<span class="footnote-note"><sup>` + m[2] + `</sup> ` + content + `</span>`
+	})
+	body = reFootnoteSection.ReplaceAllString(body, "")
+	doc.Body = template.HTML(body)
+}
 var reHeading = regexp.MustCompile(`(?i)<(h[2-6])(\b[^>]*)>([^<]*)</h[2-6]>`)
 
 // MarkNoNumber adds class="no-number" to h2-h6 headings whose text matches

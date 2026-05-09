@@ -101,8 +101,10 @@ goldmark
 ### Notes de bas de page
 
 Le format Markdown supporte les notes de bas de page[^1] qui sont automatiquement numérotées et ancrées.
+Le format Markdown supporte les notes de bas de page[^2] qui sont automatiquement numérotées et ancrées.
 
 [^1]: Les notes de bas de page apparaissent en bas de la page concernée dans le PDF final.
+[^2]: Les notes de bas de page apparaissent en bas de la page concernée dans le PDF final.
 
 ### Tableaux avancés
 

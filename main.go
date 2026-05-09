@@ -60,6 +60,7 @@ func main() {
 	}
 
 	parser.ExtractPreTOC(doc, cfg.TOC.PreTOC)
+	parser.InlineFootnotes(doc)
 
 	html, err := tmpl.Render(flags.Template, doc, cfg)
 	if err != nil {
