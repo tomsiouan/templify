@@ -381,6 +381,28 @@
             }
 
             /* ════════════════════════════════════════
+       PRE-TOC (Remerciements, etc.)
+    ════════════════════════════════════════ */
+            .pre-toc-page {
+                page: toc;
+                page-break-after: always;
+                padding-top: 2mm;
+            }
+
+            .pre-toc-page h1,
+            .pre-toc-page h2,
+            .pre-toc-page h3,
+            .pre-toc-page h4,
+            .pre-toc-page h5,
+            .pre-toc-page h6,
+            .content > h1:first-child,
+            .content > h2:first-child,
+            .content > h3:first-child {
+                break-before: auto;
+                page-break-before: auto;
+            }
+
+            /* ════════════════════════════════════════
        TABLE OF CONTENTS
     ════════════════════════════════════════ */
             .toc-page {
@@ -452,8 +474,10 @@
         </style>
     </head>
     <body>
-        {{.CoverHTML}} {{if and .Config.BlankPage .TOC}}
+        {{.CoverHTML}} {{if and .Config.BlankPage (or .PreTOC .TOC)}}
         <div class="blank-page"></div>
+        {{end}} {{if .PreTOC}}
+        <div class="pre-toc-page">{{.PreTOC}}</div>
         {{end}} {{if .TOC}}
         <div class="toc-page">
             <div class="toc-heading">Sommaire</div>

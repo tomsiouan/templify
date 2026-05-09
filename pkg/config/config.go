@@ -47,6 +47,7 @@ type TOCConfig struct {
 	Enabled  bool     `yaml:"enabled"`
 	MaxDepth int      `yaml:"max_depth"`
 	Exclude  []string `yaml:"exclude"`
+	PreTOC   []string `yaml:"pre_toc"` // sections extracted from body and placed before the TOC
 }
 
 type HeadingNumbersConfig struct {

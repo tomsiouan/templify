@@ -59,6 +59,8 @@ func main() {
 		doc.TOC = nil
 	}
 
+	parser.ExtractPreTOC(doc, cfg.TOC.PreTOC)
+
 	html, err := tmpl.Render(flags.Template, doc, cfg)
 	if err != nil {
 		slog.Error("template failed", "err", err)

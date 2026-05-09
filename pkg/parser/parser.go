@@ -3,6 +3,7 @@ package parser
 import (
 	"bytes"
 	"fmt"
+	gohtml "html"
 	"html/template"
 	"os"
 	"regexp"
@@ -29,6 +30,7 @@ type Document struct {
 	Author string
 	Date   string
 	Body   template.HTML
+	PreTOC template.HTML // sections extracted from body to render before the TOC
 	Meta   map[string]any
 	TOC    []TocEntry
 }
@@ -103,6 +105,37 @@ func Parse(data []byte) (*Document, error) {
 	return doc, nil
 }
 
+var reNextTopHeading = regexp.MustCompile(`<h[12][ >]`)
+
+// ExtractPreTOC removes sections matching the given headings from doc.Body and
+// stores their HTML in doc.PreTOC, in the order they appear in the document.
+func ExtractPreTOC(doc *Document, headings []string) {
+	if len(headings) == 0 {
+		return
+	}
+	body := string(doc.Body)
+	var extracted strings.Builder
+	for _, heading := range headings {
+		reHead := regexp.MustCompile(`<h2[^>]*>` + regexp.QuoteMeta(heading) + `</h2>`)
+		loc := reHead.FindStringIndex(body)
+		if loc == nil {
+			continue
+		}
+		// find the next h1/h2 after this heading to determine section end
+		next := reNextTopHeading.FindStringIndex(body[loc[1]:])
+		end := len(body)
+		if next != nil {
+			end = loc[1] + next[0]
+		}
+		extracted.WriteString(body[loc[0]:end])
+		body = body[:loc[0]] + body[end:]
+	}
+	doc.Body = template.HTML(strings.TrimSpace(body))
+	if extracted.Len() > 0 {
+		doc.PreTOC = template.HTML(extracted.String())
+	}
+}
+
 var reImgTitle = regexp.MustCompile(`(<img\b[^>]*\btitle="([^"]*)"[^>]*>)`)
 var reHeading = regexp.MustCompile(`(?i)<(h[2-6])(\b[^>]*)>([^<]*)</h[2-6]>`)
 
@@ -163,5 +196,5 @@ func headingText(n ast.Node, source []byte) string {
 		}
 		return ast.WalkContinue, nil
 	})
-	return strings.TrimSpace(sb.String())
+	return gohtml.UnescapeString(strings.TrimSpace(sb.String()))
 }

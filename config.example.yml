@@ -42,7 +42,8 @@ heading_numbers:
 toc:
   enabled: true
   max_depth: 2
-  exclude: [] # heading texts to omit from the TOC entirely (e.g. Remerciements)
+  exclude: []   # heading texts to omit from the TOC entirely (e.g. Remerciements)
+  pre_toc: []   # heading texts to extract from body and place before the TOC (e.g. Remerciements)
 
 header:
   enabled: false
