@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Devis {{index .Meta "quote_number"}}</title>
+        {{if .Config.Font.URL}}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="{{.Config.Font.URL}}" rel="stylesheet" />
+        {{end}}
+        {{.ConfigCSS}}
+        <style>
+            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+            body { color: var(--text); background: #fff; }
+
+            .quote { width: 100%; min-height: 269mm; display: flex; flex-direction: column; }
+
+            /* ── Header ── */
+            .q-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                padding-bottom: 8mm;
+                border-bottom: 2px solid var(--blue);
+                margin-bottom: 8mm;
+            }
+
+            .q-vendor { flex: 1; }
+            .q-vendor-logo { max-height: 18mm; max-width: 50mm; margin-bottom: 3mm; display: block; }
+            .q-vendor p { font-size: 9pt; color: var(--text-muted); line-height: 1.7; margin: 0; }
+
+            .q-meta { text-align: right; flex-shrink: 0; }
+            .q-meta-title { font-size: 20pt; font-weight: 600; color: var(--blue); letter-spacing: -0.02em; margin-bottom: 3mm; }
+            .q-meta table { margin-left: auto; font-size: 9pt; border: none; }
+            .q-meta td { border: none; padding: 0.5mm 0 0.5mm 5mm; }
+            .q-meta td:first-child { color: var(--text-muted); text-align: right; }
+            .q-meta td:last-child  { font-weight: 600; text-align: right; }
+
+            /* ── Client ── */
+            .q-client {
+                background: var(--bg-soft);
+                border-radius: 4px;
+                padding: 5mm 6mm;
+                margin-bottom: 8mm;
+                max-width: 90mm;
+            }
+            .q-client-label { font-size: 7.5pt; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2mm; }
+            .q-client p { font-size: 10pt; margin: 0; line-height: 1.6; }
+
+            /* ── Items table ── */
+            .q-items { width: 100%; border-collapse: collapse; margin-bottom: 6mm; font-size: 9.5pt; }
+            .q-items thead tr { background: var(--blue); color: #fff; }
+            .q-items th { padding: 2.5mm 3mm; font-weight: 600; text-align: left; }
+            .q-items th.num, .q-items td.num { text-align: right; }
+            .q-items td { padding: 2.5mm 3mm; border-bottom: 1px solid var(--bg-soft); vertical-align: top; }
+            .q-items tbody tr:last-child td { border-bottom: none; }
+
+            /* ── Totals ── */
+            .q-totals { margin-left: auto; width: 72mm; margin-bottom: 8mm; }
+            .q-totals table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+            .q-totals td { padding: 1.5mm 2mm; border: none; }
+            .q-totals td:first-child { color: var(--text-muted); }
+            .q-totals td:last-child  { text-align: right; font-weight: 600; }
+            .q-totals .total-ttc td { padding-top: 3mm; border-top: 2px solid var(--blue); font-size: 11pt; color: var(--blue); }
+
+            /* ── Conditions ── */
+            .q-footer { margin-top: auto; border-top: 1px solid var(--bg-soft); padding-top: 5mm; font-size: 8.5pt; color: var(--text-muted); line-height: 1.6; }
+            .q-footer p { margin: 0; }
+        </style>
+    </head>
+    <body>
+        {{- $articles    := index .Sections "Articles" -}}
+        {{- $headers     := index $articles.Table 0 -}}
+        {{- $rows        := rowSlice $articles.Table 1 -}}
+        {{- $vatRate     := toFloat (printf "%v" (index .Meta "vat")) -}}
+        {{- $totalHT     := sumProductLast $rows -}}
+        {{- $tva         := pct $totalHT $vatRate -}}
+        {{- $totalTTC    := add $totalHT $tva -}}
+        {{- $logoPath    := .Config.CustomString "quote.logo" "" -}}
+        {{- $showLogo    := .Config.CustomBool "quote.show.logo" false -}}
+        {{- $showVat     := .Config.CustomBool "quote.show.vat" true -}}
+        {{- $showValidity := .Config.CustomBool "quote.show.validity_date" true -}}
+        {{- $lClient     := .Config.CustomString "quote.labels.client" "Adresser à" -}}
+        {{- $lTotalHT    := .Config.CustomString "quote.labels.total_ht" "Total HT" -}}
+        {{- $lVat        := .Config.CustomString "quote.labels.vat" "TVA" -}}
+        {{- $lTotalTTC   := .Config.CustomString "quote.labels.total_ttc" "Total TTC" -}}
+        {{- $lValidity   := .Config.CustomString "quote.labels.validity" "Valable jusqu'au" -}}
+
+        <div class="quote">
+
+            <!-- Vendor + quote meta -->
+            <div class="q-header">
+                <div class="q-vendor">
+                    {{if and $showLogo $logoPath}}
+                    <img class="q-vendor-logo" src="{{$logoPath}}" alt="logo" />
+                    {{end}}
+                    {{with index .Sections "Vendeur"}}
+                    <div>{{.HTML}}</div>
+                    {{end}}
+                </div>
+                <div class="q-meta">
+                    <div class="q-meta-title">Devis</div>
+                    <table>
+                        {{if index .Meta "quote_number"}}
+                        <tr><td>N°</td><td>{{index .Meta "quote_number"}}</td></tr>
+                        {{end}}
+                        {{if .Date}}
+                        <tr><td>Date</td><td>{{.Date}}</td></tr>
+                        {{end}}
+                        {{if and $showValidity (index .Meta "validity_date")}}
+                        <tr><td>{{$lValidity}}</td><td>{{index .Meta "validity_date"}}</td></tr>
+                        {{end}}
+                    </table>
+                </div>
+            </div>
+
+            <!-- Client -->
+            {{with index .Sections "Client"}}
+            <div class="q-client">
+                <div class="q-client-label">{{$lClient}}</div>
+                <div>{{.HTML}}</div>
+            </div>
+            {{end}}
+
+            <!-- Line items -->
+            <table class="q-items">
+                <thead>
+                    <tr>
+                        {{range initCells $headers}}<th>{{.}}</th>{{end}}
+                        <th class="num">{{prevCell $headers}}</th>
+                        <th class="num">{{lastCell $headers}}</th>
+                        <th class="num">{{$lTotalHT}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $rows}}
+                    {{$lineTotal := mul (toFloat (prevCell .)) (toFloat (lastCell .))}}
+                    <tr>
+                        {{range initCells .}}<td>{{.}}</td>{{end}}
+                        <td class="num">{{currency (toFloat (prevCell .))}}</td>
+                        <td class="num">{{currency (toFloat (lastCell .))}}</td>
+                        <td class="num">{{currency $lineTotal}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+
+            <!-- Totals -->
+            <div class="q-totals">
+                <table>
+                    {{if $showVat}}
+                    <tr><td>{{$lTotalHT}}</td><td>{{currency $totalHT}}</td></tr>
+                    <tr><td>{{$lVat}} ({{printf "%.0f" $vatRate}} %)</td><td>{{currency $tva}}</td></tr>
+                    <tr class="total-ttc"><td>{{$lTotalTTC}}</td><td>{{currency $totalTTC}}</td></tr>
+                    {{else}}
+                    <tr class="total-ttc"><td>{{$lTotalHT}}</td><td>{{currency $totalHT}}</td></tr>
+                    {{end}}
+                </table>
+            </div>
+
+            <!-- Conditions -->
+            {{with index .Sections "Conditions"}}
+            <div class="q-footer">{{.HTML}}</div>
+            {{end}}
+
+        </div>
+    </body>
+</html>

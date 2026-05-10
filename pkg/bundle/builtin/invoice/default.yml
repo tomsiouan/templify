@@ -1,0 +1,51 @@
+cover:
+  enabled: false
+
+toc:
+  enabled: false
+
+header:
+  enabled: false
+
+footer:
+  enabled: false
+
+page:
+  size: A4
+  margins:
+    top: 14mm
+    right: 14mm
+    bottom: 14mm
+    left: 14mm
+
+font:
+  family: Inter
+  url: https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap
+  size: 10pt
+  line_height: 1.5
+
+colors:
+  primary: "#1e3a5f"
+  primary_light: "#2d5986"
+  background: "#f0f4f8"
+  text: "#0f172a"
+  text_muted: "#64748b"
+
+custom:
+  invoice:
+    logo: ""             # path to logo file (relative to config)
+    labels:
+      vendor: "Émetteur"
+      client: "Facturer à"
+      items: "Désignation"
+      qty: "Qté"
+      unit_price: "Prix unitaire HT"
+      total_ht: "Total HT"
+      vat: "TVA"
+      total_ttc: "Total TTC"
+    show:
+      logo: false
+      due_date: true
+      siret: false
+      vat_number: false
+      iban: false

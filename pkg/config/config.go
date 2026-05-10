@@ -99,6 +99,7 @@ type Config struct {
 	Colors          ColorsConfig       `yaml:"colors"`
 	Cover           CoverConfig        `yaml:"cover"`
 	References      ReferencesConfig   `yaml:"references"`
+	Custom          map[string]any     `yaml:"custom"`
 	dir             string
 }
 
@@ -148,6 +149,54 @@ func toStringMap(v any) map[string]any {
 		return out
 	}
 	return nil
+}
+
+// CustomString returns a string value from Config.Custom at the given dot-separated path,
+// falling back to def if missing or not a string (e.g. "invoice.labels.client").
+func (c *Config) CustomString(path, def string) string {
+	parts := strings.SplitN(path, ".", 2)
+	if c.Custom == nil {
+		return def
+	}
+	v, ok := c.Custom[parts[0]]
+	if !ok {
+		return def
+	}
+	if len(parts) == 1 {
+		if s, ok := v.(string); ok {
+			return s
+		}
+		return def
+	}
+	sub := toStringMap(v)
+	if sub == nil {
+		return def
+	}
+	nested := &Config{Custom: sub}
+	return nested.CustomString(parts[1], def)
+}
+
+func (c *Config) CustomBool(path string, def bool) bool {
+	parts := strings.SplitN(path, ".", 2)
+	if c.Custom == nil {
+		return def
+	}
+	v, ok := c.Custom[parts[0]]
+	if !ok {
+		return def
+	}
+	if len(parts) == 1 {
+		if b, ok := v.(bool); ok {
+			return b
+		}
+		return def
+	}
+	sub := toStringMap(v)
+	if sub == nil {
+		return def
+	}
+	nested := &Config{Custom: sub}
+	return nested.CustomBool(parts[1], def)
 }
 
 // ResolvePath resolves a path relative to the config file's directory.

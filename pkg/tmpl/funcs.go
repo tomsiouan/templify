@@ -14,7 +14,8 @@ func templateFuncs() template.FuncMap {
 		"add":     func(a, b float64) float64 { return a + b },
 		"sub":     func(a, b float64) float64 { return a - b },
 		"pct":     func(base, rate float64) float64 { return base * rate / 100 },
-		"sumCol":  sumCol,
+		"sumCol":     sumCol,
+		"sumProduct": sumProduct,
 		"currency": func(f float64) string {
 			s := fmt.Sprintf("%.2f", f)
 			parts := strings.Split(s, ".")
@@ -40,6 +41,25 @@ func templateFuncs() template.FuncMap {
 			}
 			return row[i]
 		},
+		"lastCell": func(row []string) string {
+			if len(row) == 0 {
+				return ""
+			}
+			return row[len(row)-1]
+		},
+		"prevCell": func(row []string) string {
+			if len(row) < 2 {
+				return ""
+			}
+			return row[len(row)-2]
+		},
+		"initCells": func(row []string) []string {
+			if len(row) < 2 {
+				return nil
+			}
+			return row[:len(row)-2]
+		},
+		"sumProductLast": sumProductLast,
 	}
 }
 
@@ -49,6 +69,28 @@ func toFloat(s string) float64 {
 	s = strings.TrimRight(s, "€$%")
 	f, _ := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	return f
+}
+
+// sumProductLast multiplies the last two columns of each row and sums the results.
+// Convention: second-to-last = quantity, last = unit price.
+func sumProductLast(rows [][]string) float64 {
+	var total float64
+	for _, row := range rows {
+		if len(row) >= 2 {
+			total += toFloat(row[len(row)-2]) * toFloat(row[len(row)-1])
+		}
+	}
+	return total
+}
+
+func sumProduct(rows [][]string, colA, colB int) float64 {
+	var total float64
+	for _, row := range rows {
+		if colA < len(row) && colB < len(row) {
+			total += toFloat(row[colA]) * toFloat(row[colB])
+		}
+	}
+	return total
 }
 
 func sumCol(rows [][]string, col int) float64 {

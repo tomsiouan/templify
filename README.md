@@ -1,13 +1,15 @@
 # templify
 
-Convert Markdown files to styled PDFs using a config-driven HTML template system.
+Convert Markdown files to styled PDFs using a bundle-driven template system.
 
 ## Usage
 
 ```bash
 templify -input document.md -output document.pdf
-templify -input document.md -config config.yml -output document.pdf
-templify -input document.md -template custom.html -output document.pdf
+templify -input document.md -bundle report -config config.yml -output document.pdf
+templify -input invoice.md -bundle invoice -output invoice.pdf
+templify -input quote.md -bundle quote -output quote.pdf
+templify -input document.md -bundle ./my-bundle/ -output document.pdf
 ```
 
 ### Flags
@@ -16,12 +18,37 @@ templify -input document.md -template custom.html -output document.pdf
 |---|---|---|
 | `-input` | — | Path to the input Markdown file (required) |
 | `-output` | `output.pdf` | Path for the generated PDF |
-| `-template` | `default` | Built-in template name or path to a custom `.html` template |
-| `-config` | — | Path to a YAML config file |
+| `-bundle` | `report` | Built-in bundle name (`report`, `invoice`, `quote`) or path to a local bundle directory |
+| `-config` | — | Path to a YAML config file overlaid on top of the bundle defaults |
+
+## Bundles
+
+A bundle is a directory containing a `main.html` template, an optional `cover.html`, and an optional `default.yml` with bundle-specific config defaults. Built-in bundles are embedded in the binary.
+
+| Bundle | Description |
+|---|---|
+| `report` | Multi-page document with cover page, TOC, and header/footer |
+| `invoice` | Single-page invoice with automatic HT/TVA/TTC calculation |
+| `quote` | Single-page quote (devis) with optional VAT display |
+
+### Custom bundle
+
+Create a directory with at least a `main.html` and pass its path as `-bundle`:
+
+```
+my-bundle/
+├── main.html       # Go html/template
+├── cover.html      # optional cover page
+└── default.yml     # optional config defaults
+```
+
+```bash
+templify -input document.md -bundle ./my-bundle/ -output document.pdf
+```
 
 ## Configuration
 
-All visual options are controlled via a YAML config file.
+All visual options are controlled via a YAML config file. Values are layered: `config.Default()` → bundle `default.yml` → user `-config` file → front matter.
 
 ```yaml
 page:
@@ -82,11 +109,21 @@ colors:
 cover:
   enabled: true
   template: ""            # path to a custom cover template (relative to this file)
+
+custom:                   # bundle-specific options, accessible in templates via .Config.CustomString / .Config.CustomBool
+  invoice:
+    show:
+      logo: true
+    logo: ./logo.png
+    labels:
+      client: "Bill to"
 ```
 
 ## Front matter
 
-Document metadata is declared as YAML at the top of the Markdown file. It drives the cover page and can override header/footer slots per document.
+Document metadata is declared as YAML at the top of the Markdown file.
+
+### Report
 
 ```markdown
 ---
@@ -106,6 +143,44 @@ Content starts here.
 ```
 
 `{page}` and `{pages}` are replaced with the current page number and total page count.
+
+### Invoice
+
+```markdown
+---
+invoice_number: "2026-001"
+date: 2026-05-10
+due_date: 2026-06-09
+vat: 20
+---
+
+## Vendeur
+
+**Acme SAS**
+12 rue de la Paix — 75001 Paris
+
+## Client
+
+**Société Exemple**
+45 avenue des Champs — 69000 Lyon
+
+## Articles
+
+| Description | Qté | Prix HT |
+|---|---|---|
+| Développement API | 10 | 950,00 |
+| Formation (demi-journée) | 0,5 | 800,00 |
+
+## Conditions
+
+Paiement à 30 jours.
+```
+
+The last two columns of the `Articles` table are always interpreted as **quantity × unit price**. Any number of columns can precede them. HT, TVA, and TTC totals are computed automatically.
+
+### Quote
+
+Same structure as invoice. Use `quote_number` and `validity_date` instead of `invoice_number` and `due_date`. Set `vat: 0` or disable VAT display via config to produce a HT-only total.
 
 ## Markdown features
 
@@ -135,7 +210,7 @@ Set `references.figures` to the h2 heading text in your document. The tool repla
 
 Set `references.bibliography` and/or `references.sitography` to the corresponding h2 heading texts. List items are formatted as `[n]` numbered references.
 
-Use **ordered lists** so the numbers are visible in your source — you can then reference `[3]` in the text without guessing:
+Use **ordered lists** so the numbers are visible in your source:
 
 ```markdown
 ## Bibliographie
@@ -151,36 +226,61 @@ Use **ordered lists** so the numbers are visible in your source — you can then
 
 For sitography, any `http(s)` link in a list item is automatically moved to a new line below the entry title. Optional h3 sub-sections are supported — numbering is continuous across all sub-sections.
 
-## Custom templates
+## Bundle authoring
 
-Pass a `.html` file path to `-template` to use a fully custom template. Templates are Go `html/template` files with the following context:
+Bundle templates are Go `html/template` files. The template context:
 
 ```go
 type Document struct {
-    Title   string
-    Author  string
-    Date    string
-    Body    template.HTML    // rendered HTML body (do not re-escape)
-    PreTOC  template.HTML    // pre-TOC sections extracted from body
-    Meta    map[string]any   // all front matter fields
-    TOC     []TocEntry
-    Figures []FigureEntry
+    Title    string
+    Author   string
+    Date     string
+    Body     template.HTML         // rendered HTML body (do not re-escape)
+    PreTOC   template.HTML         // pre-TOC sections extracted from body
+    Meta     map[string]any        // all front matter fields
+    TOC      []TocEntry
+    Figures  []FigureEntry
+    Sections map[string]Section    // h2 sections keyed by heading text
+}
+
+type Section struct {
+    HTML  template.HTML
+    Table [][]string               // parsed table: row 0 = headers
 }
 
 type TocEntry struct {
     Level    int
     Text     string
     ID       string
-    NoNumber bool            // true when excluded from heading_numbers
+    NoNumber bool
 }
 
 type FigureEntry struct {
-    ID      string           // e.g. "fig-1"
+    ID      string                 // e.g. "fig-1"
     Caption string
 }
 ```
 
-The template also receives `.Config` (`*config.Config`) and `.ConfigCSS` (`template.HTML`) which injects the CSS derived from the config file.
+The template also receives:
+- `.Config` (`*config.Config`) — full config, including `.Config.CustomString "my.path" "default"` and `.Config.CustomBool "my.flag" false` for dot-path access into `custom:`
+- `.ConfigCSS` (`template.HTML`) — CSS block derived from the config (font, colors, margins, …)
+
+### Template functions
+
+| Function | Signature | Description |
+|---|---|---|
+| `currency` | `float64 → string` | Formats as `1 234,56 €` |
+| `toFloat` | `string → float64` | Parses numbers with spaces, commas, or `€` suffix |
+| `add`, `sub`, `mul` | `float64, float64 → float64` | Arithmetic |
+| `pct` | `base, rate float64 → float64` | `base × rate / 100` |
+| `sumProductLast` | `[][]string → float64` | Σ(col[n-2] × col[n-1]) for each row |
+| `sumProduct` | `[][]string, colA, colB int → float64` | Σ(colA[i] × colB[i]) |
+| `sumCol` | `[][]string, col int → float64` | Sum of one column |
+| `rowSlice` | `[][]string, from int → [][]string` | `rows[from:]` |
+| `cell` | `[]string, i int → string` | `row[i]` with bounds check |
+| `lastCell` | `[]string → string` | Last cell of a row |
+| `prevCell` | `[]string → string` | Second-to-last cell |
+| `initCells` | `[]string → []string` | All cells except the last two |
 
 ## Installation
 
@@ -193,7 +293,7 @@ Or build from source:
 ```bash
 git clone https://github.com/tomsiouan/templify
 cd templify
-go build -o templify ./...
+go build -o build/templify .
 ```
 
 ## Requirements
