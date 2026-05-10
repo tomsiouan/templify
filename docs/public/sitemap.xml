@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>http://localhost:1313/templify/docs/getting-started/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/docs/bundles/report/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/docs/bundles/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/docs/bundles/invoice/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/docs/configuration/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/docs/bundles/quote/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/docs/bundle-authoring/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/docs/bundles/custom/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/categories/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/docs/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/tags/</loc>
+  </url><url>
+    <loc>http://localhost:1313/templify/</loc>
+  </url>
+</urlset>

@@ -3,11 +3,37 @@ version: "3"
 tasks:
   build:
     cmds:
-      - go build -o build ./...
+      - go build -o build/templify .
+
+  test:
+    cmds:
+      - go test ./...
+
+  clean:
+    cmds:
+      - rm -rf build/ examples/*.pdf /tmp/templify-*.pdf
 
   run:
     cmds:
-      - ./build/templify -input example.md -output example.pdf -config ./config.yml
+      - ./build/templify -input examples/example.md -bundle report -output examples/example.pdf -config ./config.yml
+
+  invoice:
+    cmds:
+      - ./build/templify -input examples/example-invoice.md -bundle invoice -config examples/invoice.yml -output examples/example-invoice.pdf
+
+  quote:
+    cmds:
+      - ./build/templify -input examples/example-quote.md -bundle quote -config examples/quote.yml -output examples/example-quote.pdf
+
+  docs:
+    dir: docs
+    cmds:
+      - hugo server --buildDrafts --bind 0.0.0.0
+
+  docs:build:
+    dir: docs
+    cmds:
+      - hugo --minify
 
   default:
     cmds:
