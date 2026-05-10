@@ -25,6 +25,16 @@ tasks:
     cmds:
       - ./build/templify -input examples/example-quote.md -bundle quote -config examples/quote.yml -output examples/example-quote.pdf
 
+  docs:
+    dir: docs
+    cmds:
+      - hugo server --buildDrafts --bind 0.0.0.0
+
+  docs:build:
+    dir: docs
+    cmds:
+      - hugo --minify
+
   default:
     cmds:
       - task: build
