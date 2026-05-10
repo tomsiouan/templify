@@ -24,6 +24,13 @@ font:
   size: 10pt
   line_height: 1.5
 
+colors:
+  primary: "#047857"
+  primary_light: "#059669"
+  background: "#ecfdf5"
+  text: "#0f172a"
+  text_muted: "#64748b"
+
 custom:
   quote:
     logo: ""             # path to logo file (relative to config)

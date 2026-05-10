@@ -19,11 +19,11 @@ tasks:
 
   invoice:
     cmds:
-      - ./build/templify -input examples/example-invoice.md -bundle invoice -output examples/example-invoice.pdf
+      - ./build/templify -input examples/example-invoice.md -bundle invoice -config examples/invoice.yml -output examples/example-invoice.pdf
 
   quote:
     cmds:
-      - ./build/templify -input examples/example-quote.md -bundle quote -output examples/example-quote.pdf
+      - ./build/templify -input examples/example-quote.md -bundle quote -config examples/quote.yml -output examples/example-quote.pdf
 
   default:
     cmds:
