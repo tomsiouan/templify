@@ -1,0 +1,11 @@
+custom:
+  quote:
+    show:
+      vat: true
+      validity_date: true
+    labels:
+      client: "Adresser à"
+      total_ht: "Total HT"
+      vat: "TVA"
+      total_ttc: "Total TTC"
+      validity: "Valable jusqu'au"

@@ -1,0 +1,11 @@
+custom:
+  invoice:
+    logo: "./Markdown-mark.svg"
+    show:
+      logo: true
+      due_date: true
+    labels:
+      client: "Facturer à"
+      total_ht: "Total HT"
+      vat: "TVA"
+      total_ttc: "Total TTC"
