@@ -1,114 +1,12 @@
 package tmpl
 
 import (
-	"bytes"
-	"embed"
 	"fmt"
 	"html/template"
-	"os"
-	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/tomsiouan/templify/pkg/config"
-	"github.com/tomsiouan/templify/pkg/parser"
 )
-
-var styleTagRe = regexp.MustCompile(`(?is)<style[^>]*>.*?</style>`)
-
-//go:embed builtin/*.html
-var builtinFS embed.FS
-
-func Render(name string, doc *parser.Document, cfg *config.Config) (string, error) {
-	coverHTML, coverCSS, err := renderCover(doc, cfg)
-	if err != nil {
-		return "", err
-	}
-
-	content, err := loadTemplate(name)
-	if err != nil {
-		return "", err
-	}
-
-	t, err := template.New("doc").Parse(content)
-	if err != nil {
-		return "", fmt.Errorf("parse template: %w", err)
-	}
-
-	data := struct {
-		*parser.Document
-		Config    *config.Config
-		ConfigCSS template.HTML
-		CoverHTML template.HTML
-		CoverCSS  template.HTML
-	}{doc, cfg, buildConfigCSS(cfg), coverHTML, coverCSS}
-
-	var buf bytes.Buffer
-	if err := t.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("execute template: %w", err)
-	}
-
-	return buf.String(), nil
-}
-
-func renderCover(doc *parser.Document, cfg *config.Config) (html template.HTML, css template.HTML, err error) {
-	if !cfg.Cover.Enabled {
-		return "", "", nil
-	}
-
-	var content string
-	if cfg.Cover.Template != "" {
-		path := cfg.ResolvePath(cfg.Cover.Template)
-		raw, err := os.ReadFile(path)
-		if err != nil {
-			return "", "", fmt.Errorf("read cover template %q: %w", path, err)
-		}
-		content = string(raw)
-	} else {
-		raw, err := builtinFS.ReadFile("builtin/cover.html")
-		if err != nil {
-			return "", "", fmt.Errorf("read built-in cover: %w", err)
-		}
-		content = string(raw)
-	}
-
-	t, err := template.New("cover").Parse(content)
-	if err != nil {
-		return "", "", fmt.Errorf("parse cover template: %w", err)
-	}
-
-	tdata := struct {
-		*parser.Document
-		Config *config.Config
-	}{doc, cfg}
-
-	var buf bytes.Buffer
-	if err := t.Execute(&buf, tdata); err != nil {
-		return "", "", fmt.Errorf("execute cover template: %w", err)
-	}
-
-	rendered := buf.String()
-	styles := styleTagRe.FindAllString(rendered, -1)
-	body := styleTagRe.ReplaceAllString(rendered, "")
-
-	return template.HTML(body), template.HTML(strings.Join(styles, "\n")), nil
-}
-
-func loadTemplate(name string) (string, error) {
-	if filepath.Ext(name) == ".html" {
-		data, err := os.ReadFile(name)
-		if err != nil {
-			return "", fmt.Errorf("read template %q: %w", name, err)
-		}
-		return string(data), nil
-	}
-
-	data, err := builtinFS.ReadFile("builtin/" + name + ".html")
-	if err != nil {
-		return "", fmt.Errorf("built-in template %q not found", name)
-	}
-	return string(data), nil
-}
 
 func buildConfigCSS(cfg *config.Config) template.HTML {
 	var sb strings.Builder
@@ -131,7 +29,6 @@ func buildConfigCSS(cfg *config.Config) template.HTML {
 	writeMarginBoxes(&sb, cfg)
 	fmt.Fprintf(&sb, "}\n\n")
 
-	// Named pages: suppress all header/footer bands.
 	fmt.Fprintf(&sb, "@page cover { size: %s; margin: 0; %s }\n",
 		cfg.Page.Size, suppressAllMarginBoxes())
 	fmt.Fprintf(&sb, "@page blank { size: %s; margin: %s %s %s %s; %s }\n\n",
@@ -201,10 +98,6 @@ func buildConfigCSS(cfg *config.Config) template.HTML {
 		sb.WriteString(" }\n")
 	}
 
-	// Full-width background bands via ::before pseudo-element on the margin container.
-	// The pagebox grid has no overflow:hidden, so the pseudo-element can extend into the
-	// left/right margin columns using negative offsets = the page margin variables.
-	// Cells sit above the pseudo-element via z-index; text aligns with content column.
 	if cfg.Header.Enabled && cfg.Header.Background != "" {
 		fmt.Fprintf(&sb, ".pagedjs_margin-top { position: relative; }\n")
 		fmt.Fprintf(&sb, ".pagedjs_margin-top::before {\n")

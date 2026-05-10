@@ -211,15 +211,44 @@ func Default() *Config {
 
 func Load(path string) (*Config, error) {
 	cfg := Default()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read config %q: %w", path, err)
-	}
-	if err := yaml.Unmarshal(data, cfg); err != nil {
-		return nil, fmt.Errorf("parse config %q: %w", path, err)
+	if err := mergeYAML(cfg, path); err != nil {
+		return nil, err
 	}
 	cfg.dir = filepath.Dir(path)
 	return cfg, nil
+}
+
+// FromBundle builds a Config from the raw YAML of a bundle's default.yml.
+// Falls back to Default() if data is nil.
+func FromBundle(data []byte) (*Config, error) {
+	cfg := Default()
+	if len(data) == 0 {
+		return cfg, nil
+	}
+	if err := yaml.Unmarshal(data, cfg); err != nil {
+		return nil, fmt.Errorf("parse bundle config: %w", err)
+	}
+	return cfg, nil
+}
+
+// MergeFile overlays the YAML file at path on top of cfg.
+func MergeFile(cfg *Config, path string) error {
+	if err := mergeYAML(cfg, path); err != nil {
+		return err
+	}
+	cfg.dir = filepath.Dir(path)
+	return nil
+}
+
+func mergeYAML(cfg *Config, path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read config %q: %w", path, err)
+	}
+	if err := yaml.Unmarshal(data, cfg); err != nil {
+		return fmt.Errorf("parse config %q: %w", path, err)
+	}
+	return nil
 }
 
 // ContentCSS converts a header/footer slot value to a CSS content value.

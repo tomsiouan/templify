@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/tomsiouan/templify/pkg/bundle"
 	"github.com/tomsiouan/templify/pkg/config"
 	"github.com/tomsiouan/templify/pkg/parser"
 	"github.com/tomsiouan/templify/pkg/renderer"
@@ -20,15 +21,28 @@ func main() {
 
 	setupLogger(flags.Log)
 
-	var cfg *config.Config
+	b, err := bundle.Load(flags.Bundle)
+	if err != nil {
+		slog.Error("load bundle failed", "err", err)
+		os.Exit(1)
+	}
+
+	// Start from bundle defaults, then apply user config on top.
+	cfg, err := config.FromBundle(b.Config)
+	if err != nil {
+		slog.Error("load bundle config failed", "err", err)
+		os.Exit(1)
+	}
 	if flags.ConfigPath != "" {
-		cfg, err = config.Load(flags.ConfigPath)
-		if err != nil {
+		if err := config.MergeFile(cfg, flags.ConfigPath); err != nil {
 			slog.Error("load config failed", "err", err)
 			os.Exit(1)
 		}
-	} else {
-		cfg = config.Default()
+	}
+
+	// Override cover template if the bundle ships one and user hasn't set a custom path.
+	if b.Cover != "" && cfg.Cover.Template == "" {
+		cfg.Cover.Enabled = true
 	}
 
 	doc, err := parser.ParseFile(flags.Input)
@@ -61,12 +75,21 @@ func main() {
 
 	parser.ExtractPreTOC(doc, cfg.TOC.PreTOC)
 	parser.InlineFootnotes(doc)
-
 	parser.ProcessFigures(doc)
 	parser.GenerateFigureTable(doc, cfg.References.Figures)
 	parser.NumberReferences(doc, cfg.References.Bibliography, cfg.References.Sitography)
 
-	html, err := tmpl.Render(flags.Template, doc, cfg)
+	coverContent := b.Cover
+	if cfg.Cover.Template != "" {
+		data, err := os.ReadFile(cfg.ResolvePath(cfg.Cover.Template))
+		if err != nil {
+			slog.Error("read cover template failed", "err", err)
+			os.Exit(1)
+		}
+		coverContent = string(data)
+	}
+
+	html, err := tmpl.Render(b.Main, coverContent, doc, cfg)
 	if err != nil {
 		slog.Error("template failed", "err", err)
 		os.Exit(1)
