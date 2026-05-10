@@ -23,3 +23,22 @@ font:
   url: https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap
   size: 10pt
   line_height: 1.5
+
+custom:
+  invoice:
+    logo: ""             # path to logo file (relative to config)
+    labels:
+      vendor: "Émetteur"
+      client: "Facturer à"
+      items: "Désignation"
+      qty: "Qté"
+      unit_price: "Prix unitaire HT"
+      total_ht: "Total HT"
+      vat: "TVA"
+      total_ttc: "Total TTC"
+    show:
+      logo: false
+      due_date: true
+      siret: false
+      vat_number: false
+      iban: false
