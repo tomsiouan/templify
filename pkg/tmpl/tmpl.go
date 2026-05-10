@@ -7,17 +7,20 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/tomsiouan/templify/pkg/config"
 	"github.com/tomsiouan/templify/pkg/parser"
 )
 
+var styleTagRe = regexp.MustCompile(`(?is)<style[^>]*>.*?</style>`)
+
 //go:embed builtin/*.html
 var builtinFS embed.FS
 
 func Render(name string, doc *parser.Document, cfg *config.Config) (string, error) {
-	coverHTML, err := renderCover(doc, cfg)
+	coverHTML, coverCSS, err := renderCover(doc, cfg)
 	if err != nil {
 		return "", err
 	}
@@ -37,7 +40,8 @@ func Render(name string, doc *parser.Document, cfg *config.Config) (string, erro
 		Config    *config.Config
 		ConfigCSS template.HTML
 		CoverHTML template.HTML
-	}{doc, cfg, buildConfigCSS(cfg), coverHTML}
+		CoverCSS  template.HTML
+	}{doc, cfg, buildConfigCSS(cfg), coverHTML, coverCSS}
 
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, data); err != nil {
@@ -47,43 +51,47 @@ func Render(name string, doc *parser.Document, cfg *config.Config) (string, erro
 	return buf.String(), nil
 }
 
-func renderCover(doc *parser.Document, cfg *config.Config) (template.HTML, error) {
+func renderCover(doc *parser.Document, cfg *config.Config) (html template.HTML, css template.HTML, err error) {
 	if !cfg.Cover.Enabled {
-		return "", nil
+		return "", "", nil
 	}
 
 	var content string
 	if cfg.Cover.Template != "" {
 		path := cfg.ResolvePath(cfg.Cover.Template)
-		data, err := os.ReadFile(path)
+		raw, err := os.ReadFile(path)
 		if err != nil {
-			return "", fmt.Errorf("read cover template %q: %w", path, err)
+			return "", "", fmt.Errorf("read cover template %q: %w", path, err)
 		}
-		content = string(data)
+		content = string(raw)
 	} else {
-		data, err := builtinFS.ReadFile("builtin/cover.html")
+		raw, err := builtinFS.ReadFile("builtin/cover.html")
 		if err != nil {
-			return "", fmt.Errorf("read built-in cover: %w", err)
+			return "", "", fmt.Errorf("read built-in cover: %w", err)
 		}
-		content = string(data)
+		content = string(raw)
 	}
 
 	t, err := template.New("cover").Parse(content)
 	if err != nil {
-		return "", fmt.Errorf("parse cover template: %w", err)
+		return "", "", fmt.Errorf("parse cover template: %w", err)
 	}
 
-	data := struct {
+	tdata := struct {
 		*parser.Document
 		Config *config.Config
 	}{doc, cfg}
 
 	var buf bytes.Buffer
-	if err := t.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("execute cover template: %w", err)
+	if err := t.Execute(&buf, tdata); err != nil {
+		return "", "", fmt.Errorf("execute cover template: %w", err)
 	}
 
-	return template.HTML(buf.String()), nil
+	rendered := buf.String()
+	styles := styleTagRe.FindAllString(rendered, -1)
+	body := styleTagRe.ReplaceAllString(rendered, "")
+
+	return template.HTML(body), template.HTML(strings.Join(styles, "\n")), nil
 }
 
 func loadTemplate(name string) (string, error) {
