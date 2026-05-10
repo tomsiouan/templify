@@ -1,0 +1,39 @@
+cover:
+  enabled: false
+
+toc:
+  enabled: false
+
+header:
+  enabled: false
+
+footer:
+  enabled: false
+
+page:
+  size: A4
+  margins:
+    top: 14mm
+    right: 14mm
+    bottom: 14mm
+    left: 14mm
+
+font:
+  family: Inter
+  url: https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap
+  size: 10pt
+  line_height: 1.5
+
+custom:
+  quote:
+    logo: ""             # path to logo file (relative to config)
+    labels:
+      client: "Adresser à"
+      total_ht: "Total HT"
+      vat: "TVA"
+      total_ttc: "Total TTC"
+      validity: "Valable jusqu'au"
+    show:
+      logo: false
+      validity_date: true
+      vat: true
