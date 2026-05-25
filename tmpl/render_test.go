@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tomsiouan/templify/pkg/config"
-	"github.com/tomsiouan/templify/pkg/document"
+	"github.com/tomsiouan/templify/config"
+	"github.com/tomsiouan/templify/document"
 )
 
 func TestRender(t *testing.T) {

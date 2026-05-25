@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"testing"
 
-	"github.com/tomsiouan/templify/pkg/document"
+	"github.com/tomsiouan/templify/document"
 )
 
 func TestParseCells(t *testing.T) {

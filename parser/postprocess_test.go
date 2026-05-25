@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tomsiouan/templify/pkg/document"
+	"github.com/tomsiouan/templify/document"
 )
 
 func TestNumberListSection(t *testing.T) {

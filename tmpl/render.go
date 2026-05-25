@@ -6,8 +6,8 @@ import (
 	"html/template"
 	"regexp"
 
-	"github.com/tomsiouan/templify/pkg/config"
-	"github.com/tomsiouan/templify/pkg/document"
+	"github.com/tomsiouan/templify/config"
+	"github.com/tomsiouan/templify/document"
 )
 
 var styleTagRe = regexp.MustCompile(`(?is)<style[^>]*>.*?</style>`)

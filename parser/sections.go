@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/tomsiouan/templify/pkg/document"
+	"github.com/tomsiouan/templify/document"
 )
 
 var (

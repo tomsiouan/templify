@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/tomsiouan/templify/pkg/bundle"
-	"github.com/tomsiouan/templify/pkg/config"
-	"github.com/tomsiouan/templify/pkg/parser"
-	"github.com/tomsiouan/templify/pkg/renderer"
-	"github.com/tomsiouan/templify/pkg/tmpl"
+	"github.com/tomsiouan/templify/bundle"
+	"github.com/tomsiouan/templify/config"
+	"github.com/tomsiouan/templify/parser"
+	"github.com/tomsiouan/templify/renderer"
+	"github.com/tomsiouan/templify/tmpl"
 )
 
 func main() {
