@@ -17,7 +17,7 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 
-	"github.com/tomsiouan/templify/pkg/document"
+	"github.com/tomsiouan/templify/document"
 )
 
 // ParseFile reads a Markdown file at path and returns the parsed Document.

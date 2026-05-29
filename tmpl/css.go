@@ -5,7 +5,7 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/tomsiouan/templify/pkg/config"
+	"github.com/tomsiouan/templify/config"
 )
 
 // buildConfigCSS generates a <style> block from cfg, covering CSS variables,

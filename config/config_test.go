@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tomsiouan/templify/pkg/config"
+	"github.com/tomsiouan/templify/config"
 )
 
 func TestDefault(t *testing.T) {

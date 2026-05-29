@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tomsiouan/templify/pkg/document"
+	"github.com/tomsiouan/templify/document"
 )
 
 var reNextTopHeading = regexp.MustCompile(`<h[12][ >]`)

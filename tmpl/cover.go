@@ -6,8 +6,8 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/tomsiouan/templify/pkg/config"
-	"github.com/tomsiouan/templify/pkg/document"
+	"github.com/tomsiouan/templify/config"
+	"github.com/tomsiouan/templify/document"
 )
 
 // renderCover executes the cover template and returns the body HTML and any

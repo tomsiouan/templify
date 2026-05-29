@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tomsiouan/templify/pkg/config"
+	"github.com/tomsiouan/templify/config"
 )
 
 func TestBuildConfigCSS(t *testing.T) {
