@@ -227,3 +227,30 @@ func TestFromBundle(t *testing.T) {
 		}
 	})
 }
+
+func TestMergeFile(t *testing.T) {
+	t.Run("overlays yaml onto existing config", func(t *testing.T) {
+		dir := t.TempDir()
+		f := filepath.Join(dir, "overlay.yml")
+		if err := os.WriteFile(f, []byte("page:\n  size: Letter\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		cfg := config.Default()
+		if err := config.MergeFile(cfg, f); err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Page.Size != "Letter" {
+			t.Errorf("Page.Size = %q, want Letter", cfg.Page.Size)
+		}
+		if cfg.Font.Family != "Inter" {
+			t.Errorf("Font.Family changed unexpectedly: %q", cfg.Font.Family)
+		}
+	})
+
+	t.Run("returns error for missing file", func(t *testing.T) {
+		cfg := config.Default()
+		if err := config.MergeFile(cfg, "/nonexistent.yml"); err == nil {
+			t.Error("expected error for missing file")
+		}
+	})
+}

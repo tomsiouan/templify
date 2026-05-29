@@ -189,6 +189,92 @@ func TestInlineFootnotes(t *testing.T) {
 	})
 }
 
+func TestGenerateFigureTable(t *testing.T) {
+	t.Run("empty heading skipped", func(t *testing.T) {
+		doc := &document.Document{
+			Body:    template.HTML(`<h2>Figures</h2>`),
+			Figures: []document.FigureEntry{{ID: "fig-1", Caption: "Cap"}},
+		}
+		GenerateFigureTable(doc, "")
+		if strings.Contains(string(doc.Body), "doc-tof") {
+			t.Errorf("should not generate tof with empty heading: %s", doc.Body)
+		}
+	})
+
+	t.Run("no figures skipped", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML(`<h2>Figures</h2>`)}
+		GenerateFigureTable(doc, "Figures")
+		if strings.Contains(string(doc.Body), "doc-tof") {
+			t.Errorf("should not generate tof with no figures: %s", doc.Body)
+		}
+	})
+
+	t.Run("heading not found skipped", func(t *testing.T) {
+		doc := &document.Document{
+			Body:    template.HTML(`<h2>Other</h2>`),
+			Figures: []document.FigureEntry{{ID: "fig-1", Caption: "Cap"}},
+		}
+		GenerateFigureTable(doc, "Figures")
+		if strings.Contains(string(doc.Body), "doc-tof") {
+			t.Errorf("should not generate tof when heading not found: %s", doc.Body)
+		}
+	})
+
+	t.Run("inserts tof nav with figure links", func(t *testing.T) {
+		doc := &document.Document{
+			Body: template.HTML(`<h2>Figures</h2><p>placeholder</p>`),
+			Figures: []document.FigureEntry{
+				{ID: "fig-1", Caption: "Cap A"},
+				{ID: "fig-2", Caption: "Cap B"},
+			},
+		}
+		GenerateFigureTable(doc, "Figures")
+		if !strings.Contains(string(doc.Body), `class="doc-tof"`) {
+			t.Errorf("expected doc-tof nav: %s", doc.Body)
+		}
+		if !strings.Contains(string(doc.Body), `href="#fig-1"`) {
+			t.Errorf("expected link to fig-1: %s", doc.Body)
+		}
+		if !strings.Contains(string(doc.Body), "Cap B") {
+			t.Errorf("expected caption Cap B: %s", doc.Body)
+		}
+	})
+}
+
+func TestNumberReferences(t *testing.T) {
+	t.Run("numbers bibliography only", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML(
+			`<h2>Refs</h2><ul><li>A</li><li>B</li></ul>`,
+		)}
+		NumberReferences(doc, "Refs", "")
+		if !strings.Contains(string(doc.Body), `[0]`) || !strings.Contains(string(doc.Body), `[1]`) {
+			t.Errorf("expected [0] and [1]: %s", doc.Body)
+		}
+	})
+
+	t.Run("numbers sitography continuing from bibliography", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML(
+			`<h2>Biblio</h2><ul><li>A</li></ul><h2>Sito</h2><ul><li>B</li></ul>`,
+		)}
+		NumberReferences(doc, "Biblio", "Sito")
+		if !strings.Contains(string(doc.Body), `[0]`) {
+			t.Errorf("expected [0] in biblio: %s", doc.Body)
+		}
+		if !strings.Contains(string(doc.Body), `[1]`) {
+			t.Errorf("expected [1] in sito: %s", doc.Body)
+		}
+	})
+
+	t.Run("empty headings leave body unchanged", func(t *testing.T) {
+		body := `<h2>Section</h2><ul><li>A</li></ul>`
+		doc := &document.Document{Body: template.HTML(body)}
+		NumberReferences(doc, "", "")
+		if string(doc.Body) != body {
+			t.Errorf("body changed unexpectedly: %s", doc.Body)
+		}
+	})
+}
+
 func TestExtractPreTOC(t *testing.T) {
 	t.Run("empty headings list leaves body unchanged", func(t *testing.T) {
 		body := "<h2>Section</h2><p>text</p>"
