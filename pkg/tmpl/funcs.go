@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// templateFuncs returns the FuncMap exposed to all HTML templates, providing
+// currency formatting, arithmetic helpers, and table-cell accessors.
 func templateFuncs() template.FuncMap {
 	return template.FuncMap{
 		"toFloat": toFloat,
@@ -63,6 +65,8 @@ func templateFuncs() template.FuncMap {
 	}
 }
 
+// toFloat parses a currency-like string to float64, accepting spaces as
+// thousands separators, a comma as the decimal mark, and trailing €/$/% symbols.
 func toFloat(s string) float64 {
 	s = strings.ReplaceAll(s, " ", "")
 	s = strings.ReplaceAll(s, ",", ".")
@@ -83,6 +87,7 @@ func sumProductLast(rows [][]string) float64 {
 	return total
 }
 
+// sumProduct multiplies rows[i][colA] by rows[i][colB] for each row and returns the total.
 func sumProduct(rows [][]string, colA, colB int) float64 {
 	var total float64
 	for _, row := range rows {
@@ -93,6 +98,7 @@ func sumProduct(rows [][]string, colA, colB int) float64 {
 	return total
 }
 
+// sumCol sums the values in column col across all rows.
 func sumCol(rows [][]string, col int) float64 {
 	var total float64
 	for _, row := range rows {

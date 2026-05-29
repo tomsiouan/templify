@@ -48,6 +48,8 @@ func ExtractSections(doc *document.Document) {
 	doc.Sections = sections
 }
 
+// parseTable extracts a two-dimensional slice of cell strings from the first
+// HTML table in html. Row 0 contains header cells when a <thead> is present.
 func parseTable(html string) [][]string {
 	tbl := reTableBlock.FindString(html)
 	if tbl == "" {
@@ -71,6 +73,8 @@ func parseTable(html string) [][]string {
 	return rows
 }
 
+// parseCells returns the trimmed text content of each <td> or <th> in rowHTML,
+// stripping any inner HTML tags.
 func parseCells(rowHTML string) []string {
 	cells := reTableCell.FindAllStringSubmatch(rowHTML, -1)
 	if len(cells) == 0 {

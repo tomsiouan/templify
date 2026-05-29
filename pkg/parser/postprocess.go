@@ -12,6 +12,8 @@ import (
 
 var reNextTopHeading = regexp.MustCompile(`<h[12][ >]`)
 
+// ExtractPreTOC removes the named h2 sections from doc.Body and places them in
+// doc.PreTOC so they can be rendered before the table of contents.
 func ExtractPreTOC(doc *document.Document, headings []string) {
 	if len(headings) == 0 {
 		return
@@ -45,6 +47,8 @@ var (
 	reFootnoteRef     = regexp.MustCompile(`<sup id="[^"]*fnref:[^"]+"[^>]*><a href="#([^"]*fn:[^"]+)"[^>]*>(\d+)</a></sup>`)
 )
 
+// InlineFootnotes converts end-of-document footnotes into inline spans placed
+// immediately after their reference markers, then removes the footnote section.
 func InlineFootnotes(doc *document.Document) {
 	body := string(doc.Body)
 	section := reFootnoteSection.FindString(body)
@@ -76,6 +80,8 @@ func InlineFootnotes(doc *document.Document) {
 
 var reHeading = regexp.MustCompile(`(?i)<(h[2-6])(\b[^>]*)>([^<]*)</h[2-6]>`)
 
+// MarkNoNumber adds class="no-number" to headings whose text appears in exclude
+// and sets NoNumber on the corresponding TOC entries, suppressing CSS counters.
 func MarkNoNumber(doc *document.Document, exclude []string) {
 	if len(exclude) == 0 {
 		return
@@ -112,6 +118,8 @@ var (
 	reFigcap     = regexp.MustCompile(`<figcaption>([^<]*)</figcaption>`)
 )
 
+// ProcessFigures assigns sequential IDs (fig-1, fig-2, …) to <figure> elements
+// that contain a <figcaption>, and populates doc.Figures with ID/caption pairs.
 func ProcessFigures(doc *document.Document) {
 	body := string(doc.Body)
 	var figures []document.FigureEntry
@@ -139,6 +147,9 @@ func ProcessFigures(doc *document.Document) {
 	doc.Figures = figures
 }
 
+// GenerateFigureTable inserts a <nav class="doc-tof"> block inside the named h2
+// section, linking each entry to its figure by ID. No-op if heading is empty or
+// doc.Figures is empty.
 func GenerateFigureTable(doc *document.Document, heading string) {
 	if heading == "" || len(doc.Figures) == 0 {
 		return
@@ -175,6 +186,9 @@ var (
 	reSitoLink     = regexp.MustCompile(`<a\s+href="(https?://[^"]*)"[^>]*>[^<]*</a>`)
 )
 
+// NumberReferences numbers the list items in the bibliography and sitography
+// sections of doc.Body. The sitography counter continues from where the
+// bibliography left off.
 func NumberReferences(doc *document.Document, biblioHeading, sitoHeading string) {
 	body := string(doc.Body)
 	counter := 0
@@ -187,6 +201,10 @@ func NumberReferences(doc *document.Document, biblioHeading, sitoHeading string)
 	doc.Body = template.HTML(body)
 }
 
+// numberListSection numbers list items inside the named h2 section starting from
+// startN. <ul> items are auto-incremented; <ol start="N"> items use N as the
+// base. When isSito is true, bare links are reformatted as ref-url anchors.
+// Returns the updated body and the next available counter value.
 func numberListSection(body, heading string, startN int, isSito bool) (string, int) {
 	reHead := regexp.MustCompile(`<h2[^>]*>` + regexp.QuoteMeta(heading) + `</h2>`)
 	loc := reHead.FindStringIndex(body)

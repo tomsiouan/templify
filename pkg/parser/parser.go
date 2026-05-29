@@ -20,6 +20,7 @@ import (
 	"github.com/tomsiouan/templify/pkg/document"
 )
 
+// ParseFile reads a Markdown file at path and returns the parsed Document.
 func ParseFile(path string) (*document.Document, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -28,6 +29,8 @@ func ParseFile(path string) (*document.Document, error) {
 	return Parse(data)
 }
 
+// Parse converts Markdown bytes to a Document, extracting front matter metadata,
+// building a TOC from headings, and splitting the body into h2-delimited sections.
 func Parse(data []byte) (*document.Document, error) {
 	md := goldmark.New(
 		goldmark.WithExtensions(
@@ -94,6 +97,8 @@ func Parse(data []byte) (*document.Document, error) {
 
 var reImgTitle = regexp.MustCompile(`(<img\b[^>]*\btitle="([^"]*)"[^>]*>)`)
 
+// wrapImageCaptions wraps <img> elements that carry a title attribute inside a
+// <figure><figcaption> pair, turning the title into a visible caption.
 func wrapImageCaptions(html string) string {
 	return reImgTitle.ReplaceAllStringFunc(html, func(img string) string {
 		m := reImgTitle.FindStringSubmatch(img)
@@ -104,6 +109,8 @@ func wrapImageCaptions(html string) string {
 	})
 }
 
+// headingText extracts the plain-text content of a heading AST node,
+// collecting Text and String child nodes and unescaping any HTML entities.
 func headingText(n ast.Node, source []byte) string {
 	var sb strings.Builder
 	_ = ast.Walk(n, func(node ast.Node, entering bool) (ast.WalkStatus, error) {

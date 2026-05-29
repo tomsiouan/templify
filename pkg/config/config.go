@@ -176,6 +176,8 @@ func (c *Config) CustomString(path, def string) string {
 	return nested.CustomString(parts[1], def)
 }
 
+// CustomBool returns a bool value from Config.Custom at the given dot-separated path,
+// falling back to def if the key is missing or the value is not a bool.
 func (c *Config) CustomBool(path string, def bool) bool {
 	parts := strings.SplitN(path, ".", 2)
 	if c.Custom == nil {
@@ -207,6 +209,8 @@ func (c *Config) ResolvePath(p string) string {
 	return filepath.Join(c.dir, p)
 }
 
+// Default returns a Config pre-filled with sensible defaults for page size,
+// typography, colors, TOC, and footer page numbering.
 func Default() *Config {
 	return &Config{
 		Page: PageConfig{
@@ -258,6 +262,7 @@ func Default() *Config {
 	}
 }
 
+// Load reads a YAML config file at path and overlays it on top of Default.
 func Load(path string) (*Config, error) {
 	cfg := Default()
 	if err := mergeYAML(cfg, path); err != nil {
@@ -289,6 +294,7 @@ func MergeFile(cfg *Config, path string) error {
 	return nil
 }
 
+// mergeYAML reads the YAML file at path and unmarshals it into cfg.
 func mergeYAML(cfg *Config, path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
