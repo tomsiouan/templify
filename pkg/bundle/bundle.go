@@ -25,6 +25,7 @@ func Load(nameOrPath string) (*Bundle, error) {
 	return loadBuiltin(nameOrPath)
 }
 
+// loadBuiltin loads a bundle embedded in the binary by name (e.g. "report", "invoice").
 func loadBuiltin(name string) (*Bundle, error) {
 	prefix := "builtin/" + name
 
@@ -45,6 +46,8 @@ func loadBuiltin(name string) (*Bundle, error) {
 	return b, nil
 }
 
+// loadDir loads a bundle from a local directory. main.html is required;
+// cover.html and default.yml are optional.
 func loadDir(path string) (*Bundle, error) {
 	mainData, err := os.ReadFile(filepath.Join(path, "main.html"))
 	if err != nil {
@@ -63,6 +66,7 @@ func loadDir(path string) (*Bundle, error) {
 	return b, nil
 }
 
+// isDir reports whether path is an existing directory.
 func isDir(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.IsDir()

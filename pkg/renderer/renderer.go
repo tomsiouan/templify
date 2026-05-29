@@ -61,29 +61,45 @@ func ToPDF(html string, outputPath string, baseDir string) error {
 		return fmt.Errorf("read paged.js: %w", err)
 	}
 
-	pagedJSTag := "<script>\n" + string(pagedJS) + "\n</script>"
-	html = strings.Replace(html, "</head>", pagedJSConfig+pagedJSTag+"</head>", 1)
+	tmpPath, cleanup, err := writeTempHTML(injectPagedJS(html, pagedJS), baseDir)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
 
+	return launchAndRender(tmpPath, outputPath)
+}
+
+// injectPagedJS inserts the paged.js config and polyfill script before </head>.
+func injectPagedJS(html string, pagedJS []byte) string {
+	tag := "<script>\n" + string(pagedJS) + "\n</script>"
+	return strings.Replace(html, "</head>", pagedJSConfig+tag+"</head>", 1)
+}
+
+// writeTempHTML writes html to a temp file in baseDir and returns its path and a cleanup func.
+func writeTempHTML(html string, baseDir string) (string, func(), error) {
 	tmp, err := os.CreateTemp(baseDir, "templify-*.html")
 	if err != nil {
-		return fmt.Errorf("create temp file: %w", err)
+		return "", nil, fmt.Errorf("create temp file: %w", err)
 	}
-	defer os.Remove(tmp.Name())
+	cleanup := func() { os.Remove(tmp.Name()) }
 	if _, err := tmp.WriteString(html); err != nil {
 		tmp.Close()
-		return fmt.Errorf("write temp file: %w", err)
+		cleanup()
+		return "", nil, fmt.Errorf("write temp file: %w", err)
 	}
 	tmp.Close()
+	return tmp.Name(), cleanup, nil
+}
 
-	path, ok := launcher.LookPath()
-	if !ok {
-		path, err = launcher.NewBrowser().Get()
-		if err != nil {
-			return fmt.Errorf("download chromium: %w", err)
-		}
+// launchAndRender opens tmpPath in headless Chromium, waits for paged.js, and writes a PDF.
+func launchAndRender(tmpPath, outputPath string) error {
+	chromiumPath, err := findChromium()
+	if err != nil {
+		return err
 	}
 
-	u, err := launcher.New().Bin(path).Headless(true).Launch()
+	u, err := launcher.New().Bin(chromiumPath).Headless(true).Launch()
 	if err != nil {
 		return fmt.Errorf("launch browser: %w", err)
 	}
@@ -91,17 +107,40 @@ func ToPDF(html string, outputPath string, baseDir string) error {
 	browser := rod.New().ControlURL(u).MustConnect()
 	defer browser.MustClose()
 
-	absHTML, err := filepath.Abs(tmp.Name())
+	absHTML, err := filepath.Abs(tmpPath)
 	if err != nil {
 		return fmt.Errorf("resolve temp path: %w", err)
 	}
+
+	data, err := renderHTMLToPDF(browser, absHTML)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(outputPath, data, 0o644)
+}
+
+// findChromium returns the path to a local Chromium binary, downloading one if needed.
+func findChromium() (string, error) {
+	if path, ok := launcher.LookPath(); ok {
+		return path, nil
+	}
+	path, err := launcher.NewBrowser().Get()
+	if err != nil {
+		return "", fmt.Errorf("download chromium: %w", err)
+	}
+	return path, nil
+}
+
+// renderHTMLToPDF opens absHTML in browser, waits for paged.js layout, and returns PDF bytes.
+func renderHTMLToPDF(browser *rod.Browser, absHTML string) ([]byte, error) {
 	p, err := browser.Page(proto.TargetCreateTarget{URL: "file://" + absHTML})
 	if err != nil {
-		return fmt.Errorf("create page: %w", err)
+		return nil, fmt.Errorf("create page: %w", err)
 	}
 
 	if err := p.WaitLoad(); err != nil {
-		return fmt.Errorf("wait load: %w", err)
+		return nil, fmt.Errorf("wait load: %w", err)
 	}
 
 	if _, err = p.Eval(`async () => {
@@ -115,7 +154,7 @@ func ToPDF(html string, outputPath string, baseDir string) error {
 			check();
 		});
 	}`); err != nil {
-		return fmt.Errorf("wait paged.js: %w", err)
+		return nil, fmt.Errorf("wait paged.js: %w", err)
 	}
 
 	reader, err := p.PDF(&proto.PagePrintToPDF{
@@ -123,13 +162,13 @@ func ToPDF(html string, outputPath string, baseDir string) error {
 		PreferCSSPageSize: true,
 	})
 	if err != nil {
-		return fmt.Errorf("print PDF: %w", err)
+		return nil, fmt.Errorf("print PDF: %w", err)
 	}
 
 	data, err := io.ReadAll(reader)
 	if err != nil {
-		return fmt.Errorf("read PDF: %w", err)
+		return nil, fmt.Errorf("read PDF: %w", err)
 	}
 
-	return os.WriteFile(outputPath, data, 0644)
+	return data, nil
 }
