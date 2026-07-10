@@ -68,6 +68,28 @@ func TestBuildConfigCSS(t *testing.T) {
 		}
 	})
 
+	t.Run("headings avoid being stranded alone at the bottom of a page", func(t *testing.T) {
+		css := string(buildConfigCSS(config.Default()))
+		if !strings.Contains(css, "break-after: avoid") {
+			t.Error("expected break-after: avoid on headings")
+		}
+		if !strings.Contains(css, "h1 + p") || !strings.Contains(css, "h6 + blockquote") {
+			t.Error("expected heading+follower keep-together selectors")
+		}
+	})
+
+	t.Run("forced page break before a heading hides the preceding hr divider", func(t *testing.T) {
+		cfg := config.Default()
+		cfg.Headings.H2.PageBreakBefore = true
+		css := string(buildConfigCSS(cfg))
+		if !strings.Contains(css, "hr:has(+ h2) { display: none; }") {
+			t.Error("expected hr divider before h2 to be hidden")
+		}
+		if strings.Contains(css, "hr:has(+ h1)") {
+			t.Error("did not expect hr rule for h1, which has no forced page break")
+		}
+	})
+
 	t.Run("header background adds pagedjs margin rules", func(t *testing.T) {
 		cfg := config.Default()
 		cfg.Header.Enabled = true

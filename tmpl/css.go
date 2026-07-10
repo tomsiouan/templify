@@ -23,6 +23,7 @@ func buildConfigCSS(cfg *config.Config) template.HTML {
 	}
 
 	writeHeadingSizes(&sb, cfg)
+	writeHeadingKeepTogetherRules(&sb)
 
 	if cfg.Header.Enabled && cfg.Header.Background != "" {
 		writeHeaderBandCSS(&sb, cfg.Header.Background)
@@ -125,12 +126,45 @@ func writeHeadingSizes(sb *strings.Builder, cfg *config.Config) {
 		{"h5", cfg.Headings.H5},
 		{"h6", cfg.Headings.H6},
 	} {
-		fmt.Fprintf(sb, "%s { font-size: %s;", h.tag, h.level.Size)
+		fmt.Fprintf(sb, "%s { font-size: %s; break-after: avoid; break-inside: avoid; page-break-after: avoid; page-break-inside: avoid;", h.tag, h.level.Size)
 		if h.level.PageBreakBefore {
 			sb.WriteString(" break-before: page; page-break-before: always;")
 		}
 		sb.WriteString(" }\n")
+
+		// A heading that already forces its own page break makes an "hr"
+		// divider right before it redundant, and that hr is exactly the kind
+		// of lone block that can get stranded on an otherwise blank page
+		// (it overflows onto a fresh page by itself, then the heading's own
+		// forced break bumps the heading past it to the page after). Hiding
+		// it removes both the redundancy and the stranding.
+		if h.level.PageBreakBefore {
+			fmt.Fprintf(sb, "hr:has(+ %s) { display: none; }\n", h.tag)
+		}
 	}
+}
+
+// writeHeadingKeepTogetherRules keeps each heading glued to the block that
+// follows it, so a heading is never stranded alone at the bottom of a page:
+// break-after: avoid (above) pushes the heading forward whenever the next
+// block doesn't fit at all, and break-inside: avoid here stops that next
+// block from being split after just a line or two, leaving the heading with
+// almost nothing under it.
+func writeHeadingKeepTogetherRules(sb *strings.Builder) {
+	headings := []string{"h1", "h2", "h3", "h4", "h5", "h6"}
+	followers := []string{"p", "ul", "ol", "table", "blockquote"}
+
+	var selectors []string
+	for _, h := range headings {
+		for _, f := range followers {
+			selectors = append(selectors, h+" + "+f)
+		}
+	}
+
+	fmt.Fprintf(sb, "%s {\n", strings.Join(selectors, ",\n"))
+	sb.WriteString("    break-inside: avoid;\n")
+	sb.WriteString("    page-break-inside: avoid;\n")
+	sb.WriteString("}\n\n")
 }
 
 // writeHeaderBandCSS writes paged.js rules that render a full-width colored
