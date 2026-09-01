@@ -37,9 +37,12 @@ type PageConfig struct {
 }
 
 // FontFace is one self-hosted font file. Faces are inlined into the document's
-// own stylesheet as data URIs, which keeps the PDF text layer intact: fonts
-// pulled in through a linked stylesheet make Chromium emit one positioned run
-// per glyph, and readers then reassemble copied text out of order.
+// own stylesheet as data URIs. This matters for the PDF's text layer: fonts
+// pulled in through a linked stylesheet are more likely to end up as a
+// variable font, which Chromium's PDF export badly mis-positions; a static,
+// self-hosted face avoids that specific cause (see docs/configuration.md's
+// "Self-hosting fonts" section for the other causes of the same symptom,
+// which self-hosting alone does not fix).
 // File is resolved relative to the config file. Weight defaults to 400 and
 // Style to normal. UnicodeRange is optional and passed through as-is.
 type FontFace struct {

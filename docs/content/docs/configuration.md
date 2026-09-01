@@ -82,6 +82,9 @@ code:
   foreground: ""
   font_family: JetBrains Mono
   font_url: https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap
+  # faces:                        # same self-hosting mechanism as font.faces
+  #   - file: ./fonts/jetbrains-mono-400.woff2
+  #     weight: 400
   font_size: 8.5pt
   line_height: 1.45
   line_numbers: false

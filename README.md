@@ -116,6 +116,7 @@ code:
   foreground: ""          # override the theme's default text color
   font_family: JetBrains Mono
   font_url: https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap
+  # faces: [...]           # same self-hosting mechanism as font.faces above
   font_size: 8.5pt
   line_height: 1.45
   line_numbers: false     # only on fences naming a language; use ```text for plain blocks
@@ -145,9 +146,9 @@ custom:                   # bundle-specific options, accessible in templates via
 templify -fetch-fonts -config myconfig.yml   # downloads the files, prints a faces: block to paste in
 ```
 
-This fixes the worst of it, but a narrower version of the same symptom (specifically around underscores in monospace code) can persist even with a static font, caused by a fractional-pixel font-size rather than the font file itself. templify also wraps every generated `font-size` in CSS's `round(value, 1px)` automatically, no configuration needed — the two fixes address different triggers of the same underlying issue and both are required for fully clean copy-paste.
+This fixes the worst of it, but the same symptom has more than one trigger, and self-hosting alone doesn't clear all of them. templify also automatically wraps every generated `font-size` in CSS's `round(value, 1px)` (fixes a narrower case around underscores in monospace code) and styles inline code with `box-shadow` instead of `padding` (padding on an inline element was enough to occasionally misorder the line it sat in). One further trigger has no automatic fix yet: a font whose internal `unitsPerEm` isn't a power of two (Manrope and JetBrains Mono both ship as 1000/2000; Inter ships as 2048) can still corrupt copy-paste around specific glyphs regardless of font-size — rescaling the font file with `fontTools` clears it, see the docs.
 
-See [Self-hosting fonts](https://tomsiouan.github.io/templify/docs/configuration/#self-hosting-fonts) in the docs for the full explanation, including why this is a PDF-reader bug (verified against an independent extraction engine) rather than a defect in the generated PDF.
+See [Self-hosting fonts](https://tomsiouan.github.io/templify/docs/configuration/#self-hosting-fonts) in the docs for the full explanation of all four causes, including why this is a PDF-reader bug (verified against an independent extraction engine) rather than a defect in the generated PDF.
 
 ## Front matter
 
@@ -302,7 +303,7 @@ The template also receives:
 - `.Config` (`*config.Config`) — full config, including `.Config.CustomString "my.path" "default"` and `.Config.CustomBool "my.flag" false` for dot-path access into `custom:`
 - `.ConfigCSS` (`template.HTML`) — CSS block derived from the config (font, colors, margins, code blocks, …)
 
-Do not style `pre`, `pre code` or `code` in a bundle: `.ConfigCSS` owns code blocks and its rules are prefixed with `html` so they outrank a bare `pre` rule. A theme's token colors and its panel background belong together, and a bundle repainting only the background would leave light text on a light panel. Override the `--code-*` variables instead, or match the `html pre` prefix and set `code.theme: none`. Bundles written before the `code:` section should drop their old `pre` rules.
+Do not style `pre`, `pre code` or `code` in a bundle: `.ConfigCSS` owns code blocks and its rules are prefixed with `html` so they outrank a bare `pre` rule. A theme's token colors and its panel background belong together, and a bundle repainting only the background would leave light text on a light panel. Override the `--code-*` variables instead, or match the `html pre` prefix and set `code.theme: none`. Bundles written before the `code:` section should drop their old `pre` rules. This also extends to any inline element you add inside body text yourself: avoid `padding` on it (use `box-shadow`'s spread instead) — see [Bundle Authoring](https://tomsiouan.github.io/templify/docs/bundle-authoring/#styling-code-blocks) in the docs for why.
 
 ### Template functions
 
