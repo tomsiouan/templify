@@ -85,3 +85,37 @@ type Section struct {
 </body>
 </html>
 ```
+
+## Styling code blocks
+
+`{{.ConfigCSS}}` styles code blocks from the [`code:` config
+section](../configuration/#code-blocks), and those rules are prefixed with
+`html` so they outrank a plain `pre { … }` rule wherever it sits in your
+stylesheet. That is deliberate: a theme's token colors and its panel background
+are two halves of one thing, and a bundle that repaints only the background
+leaves light text on a light panel.
+
+So do not style `pre`, `pre code` or `code` in your bundle. Point users at the
+`code:` options instead, or override the CSS variables:
+
+```html
+<style>
+  :root {
+    --code-bg: #1c1f26;
+    --code-font-size: 9pt;
+  }
+</style>
+```
+
+If you need the panel itself, match the prefix so your rule wins, and set
+`code.theme` to `none` in `default.yml` so no token colors are left stranded:
+
+```html
+<style>
+  html pre { background: #eef1f6; color: #1c1f26; }
+</style>
+```
+
+Bundles written before the `code:` section usually carry a copy of the old
+quote-style `pre` rules. Delete them: they are dead weight now, and the block
+would otherwise be styled in two places at once.

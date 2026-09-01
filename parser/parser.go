@@ -17,30 +17,39 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 
+	"github.com/tomsiouan/templify/config"
 	"github.com/tomsiouan/templify/document"
+	"github.com/tomsiouan/templify/highlight"
 )
 
 // ParseFile reads a Markdown file at path and returns the parsed Document.
-func ParseFile(path string) (*document.Document, error) {
+// code configures syntax highlighting of fenced code blocks.
+func ParseFile(path string, code config.CodeConfig) (*document.Document, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read %q: %w", path, err)
 	}
-	return Parse(data)
+	return Parse(data, code)
 }
 
 // Parse converts Markdown bytes to a Document, extracting front matter metadata,
 // building a TOC from headings, and splitting the body into h2-delimited sections.
-func Parse(data []byte) (*document.Document, error) {
+// code configures syntax highlighting of fenced code blocks.
+func Parse(data []byte, code config.CodeConfig) (*document.Document, error) {
+	extensions := []goldmark.Extender{
+		meta.Meta,
+		extension.GFM,
+		extension.Table,
+		extension.Footnote,
+		extension.DefinitionList,
+		extension.Typographer,
+	}
+	if ext := highlight.Extension(code); ext != nil {
+		extensions = append(extensions, ext)
+	}
+
 	md := goldmark.New(
-		goldmark.WithExtensions(
-			meta.Meta,
-			extension.GFM,
-			extension.Table,
-			extension.Footnote,
-			extension.DefinitionList,
-			extension.Typographer,
-		),
+		goldmark.WithExtensions(extensions...),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
 		),

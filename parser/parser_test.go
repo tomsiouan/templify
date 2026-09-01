@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tomsiouan/templify/config"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/text"
@@ -13,7 +14,7 @@ import (
 
 func TestParse(t *testing.T) {
 	t.Run("empty input", func(t *testing.T) {
-		doc, err := Parse([]byte{})
+		doc, err := Parse([]byte{}, config.CodeConfig{})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -24,7 +25,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("extracts front matter fields", func(t *testing.T) {
 		src := []byte("---\ntitle: My Doc\nauthor: Alice\ndate: 2024-01-01\n---\n# Hello\n")
-		doc, err := Parse(src)
+		doc, err := Parse(src, config.CodeConfig{})
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -41,7 +42,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("extracts headings to TOC", func(t *testing.T) {
 		src := []byte("## First\n\ntext\n\n## Second\n\ntext\n\n### Sub\n")
-		doc, err := Parse(src)
+		doc, err := Parse(src, config.CodeConfig{})
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -58,12 +59,58 @@ func TestParse(t *testing.T) {
 
 	t.Run("renders markdown to html", func(t *testing.T) {
 		src := []byte("**bold** text\n")
-		doc, err := Parse(src)
+		doc, err := Parse(src, config.CodeConfig{})
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
 		if !strings.Contains(string(doc.Body), "<strong>bold</strong>") {
 			t.Errorf("expected <strong> tag in body: %s", doc.Body)
+		}
+	})
+}
+
+func TestParseCodeBlocks(t *testing.T) {
+	src := []byte("```go\nfunc main() {}\n```\n")
+
+	t.Run("highlights fenced blocks when a theme is set", func(t *testing.T) {
+		doc, err := Parse(src, config.CodeConfig{Theme: "nord"})
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		body := string(doc.Body)
+		if !strings.Contains(body, `<pre class="chroma">`) {
+			t.Errorf("expected a chroma wrapper in body: %s", body)
+		}
+		// Classes rather than inline styles, so config CSS keeps the last word.
+		if !strings.Contains(body, `class="kd"`) {
+			t.Errorf("expected token classes in body: %s", body)
+		}
+		if strings.Contains(body, "style=") {
+			t.Errorf("expected no inline styles in body: %s", body)
+		}
+	})
+
+	t.Run("leaves blocks plain when highlighting is off", func(t *testing.T) {
+		doc, err := Parse(src, config.CodeConfig{Theme: "none"})
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		body := string(doc.Body)
+		if strings.Contains(body, "chroma") {
+			t.Errorf("unexpected highlighting in body: %s", body)
+		}
+		if !strings.Contains(body, "func main() {}") {
+			t.Errorf("expected the source text in body: %s", body)
+		}
+	})
+
+	t.Run("unknown language is left unhighlighted", func(t *testing.T) {
+		doc, err := Parse([]byte("```not-a-language\nzzz\n```\n"), config.CodeConfig{Theme: "nord"})
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if !strings.Contains(string(doc.Body), "zzz") {
+			t.Errorf("expected the source text in body: %s", doc.Body)
 		}
 	})
 }
@@ -74,7 +121,7 @@ func TestParseFile(t *testing.T) {
 		if err := os.WriteFile(f, []byte("---\ntitle: File Doc\n---\n## Section\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		doc, err := ParseFile(f)
+		doc, err := ParseFile(f, config.CodeConfig{})
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -84,7 +131,7 @@ func TestParseFile(t *testing.T) {
 	})
 
 	t.Run("returns error for missing file", func(t *testing.T) {
-		_, err := ParseFile("/nonexistent/path/doc.md")
+		_, err := ParseFile("/nonexistent/path/doc.md", config.CodeConfig{})
 		if err == nil {
 			t.Error("expected error for missing file")
 		}

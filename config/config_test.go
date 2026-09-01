@@ -25,6 +25,141 @@ func TestDefault(t *testing.T) {
 	if !cfg.Footer.Enabled {
 		t.Error("footer should be enabled by default")
 	}
+	if cfg.Code.Theme != "monokai" {
+		t.Errorf("Code.Theme = %q, want monokai", cfg.Code.Theme)
+	}
+	if !cfg.Code.Wrap {
+		t.Error("code wrapping should be enabled by default")
+	}
+	if cfg.Code.LineNumbers {
+		t.Error("code line numbers should be disabled by default")
+	}
+	if cfg.Code.KeepTogetherLines <= 0 {
+		t.Errorf("Code.KeepTogetherLines = %d, want a positive default", cfg.Code.KeepTogetherLines)
+	}
+}
+
+func TestCodeConfigMerge(t *testing.T) {
+	t.Run("overrides the named keys and keeps the rest", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "cfg.yml")
+		body := "code:\n  theme: monokai\n  line_numbers: true\n  keep_together_lines: 40\n"
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := config.Load(path)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if cfg.Code.Theme != "monokai" {
+			t.Errorf("Code.Theme = %q, want monokai", cfg.Code.Theme)
+		}
+		if !cfg.Code.LineNumbers {
+			t.Error("Code.LineNumbers should be true")
+		}
+		if cfg.Code.KeepTogetherLines != 40 {
+			t.Errorf("Code.KeepTogetherLines = %d, want 40", cfg.Code.KeepTogetherLines)
+		}
+		if cfg.Code.FontSize != "8.5pt" {
+			t.Errorf("Code.FontSize = %q, want the default 8.5pt", cfg.Code.FontSize)
+		}
+	})
+
+	t.Run("keep_together_lines zero disables keeping blocks whole", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "cfg.yml")
+		if err := os.WriteFile(path, []byte("code:\n  keep_together_lines: 0\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := config.Load(path)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if cfg.Code.KeepTogetherLines != 0 {
+			t.Errorf("Code.KeepTogetherLines = %d, want 0", cfg.Code.KeepTogetherLines)
+		}
+	})
+}
+
+func TestFontFacesMerge(t *testing.T) {
+	t.Run("parses a faces list for the body and code fonts", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "cfg.yml")
+		body := `
+font:
+  family: Inter
+  faces:
+    - file: ./fonts/inter-400.woff2
+      weight: 400
+    - file: ./fonts/inter-600.woff2
+      weight: 600
+      unicode_range: "U+0000-00FF"
+code:
+  faces:
+    - file: ./fonts/mono-400.woff2
+      style: italic
+`
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := config.Load(path)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+
+		if len(cfg.Font.Faces) != 2 {
+			t.Fatalf("Font.Faces len = %d, want 2", len(cfg.Font.Faces))
+		}
+		if cfg.Font.Faces[0].File != "./fonts/inter-400.woff2" || cfg.Font.Faces[0].Weight != 400 {
+			t.Errorf("Font.Faces[0] = %+v", cfg.Font.Faces[0])
+		}
+		if cfg.Font.Faces[1].UnicodeRange != "U+0000-00FF" {
+			t.Errorf("Font.Faces[1].UnicodeRange = %q, want U+0000-00FF", cfg.Font.Faces[1].UnicodeRange)
+		}
+
+		if len(cfg.Code.Faces) != 1 {
+			t.Fatalf("Code.Faces len = %d, want 1", len(cfg.Code.Faces))
+		}
+		if cfg.Code.Faces[0].Style != "italic" {
+			t.Errorf("Code.Faces[0].Style = %q, want italic", cfg.Code.Faces[0].Style)
+		}
+	})
+
+	t.Run("faces default to empty, url is untouched", func(t *testing.T) {
+		cfg := config.Default()
+		if len(cfg.Font.Faces) != 0 {
+			t.Errorf("Font.Faces = %+v, want empty by default", cfg.Font.Faces)
+		}
+		if cfg.Font.URL == "" {
+			t.Error("Font.URL should keep its default when no faces are configured")
+		}
+	})
+}
+
+func TestFontFacesCSS(t *testing.T) {
+	cfg := config.Default()
+	if got := cfg.FontFacesCSS(); got != "" {
+		t.Errorf("FontFacesCSS() = %q, want empty before SetFontFacesCSS", got)
+	}
+	cfg.SetFontFacesCSS("@font-face { font-family: 'X'; }")
+	if got := cfg.FontFacesCSS(); got != "@font-face { font-family: 'X'; }" {
+		t.Errorf("FontFacesCSS() = %q, want the stored value", got)
+	}
+}
+
+func TestConfigDir(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "cfg.yml")
+	if err := os.WriteFile(path, []byte("justify: true\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if cfg.Dir() != dir {
+		t.Errorf("Dir() = %q, want %q", cfg.Dir(), dir)
+	}
 }
 
 func TestContentCSS(t *testing.T) {

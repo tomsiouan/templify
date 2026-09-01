@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/tomsiouan/templify/config"
+	"github.com/tomsiouan/templify/highlight"
 )
 
 func TestBuildConfigCSS(t *testing.T) {
@@ -22,6 +23,26 @@ func TestBuildConfigCSS(t *testing.T) {
 		css := string(buildConfigCSS(cfg))
 		if !strings.Contains(css, cfg.Colors.Primary) {
 			t.Errorf("expected primary color %q in CSS", cfg.Colors.Primary)
+		}
+	})
+
+	t.Run("font sizes are wrapped in round() to land on a whole pixel", func(t *testing.T) {
+		// Chromium prints @font-face text one glyph per positioned run, and a
+		// fractional pixel size makes consecutive advances inconsistent by a
+		// sub-pixel amount; some PDF readers (confirmed: Apple's PDFKit) then
+		// misorder text around that, most visibly around underscores in
+		// monospace code. round(value, 1px) is a no-op when already whole, so
+		// every font-size should carry it unconditionally.
+		cfg := config.Default()
+		css := string(buildConfigCSS(cfg))
+		for _, want := range []string{
+			"font-size: round(" + cfg.Font.Size + ", 1px);",
+			"font-size: round(" + cfg.Headings.H1.Size + ", 1px);",
+			"font-size: round(0.9em, 1px);", // inline code
+		} {
+			if !strings.Contains(css, want) {
+				t.Errorf("expected %q in CSS output:\n%s", want, css)
+			}
 		}
 	})
 
@@ -111,6 +132,153 @@ func TestBuildConfigCSS(t *testing.T) {
 	})
 }
 
+func TestBuildConfigCSSCode(t *testing.T) {
+	t.Run("default config styles code blocks as a filled panel", func(t *testing.T) {
+		css := string(buildConfigCSS(config.Default()))
+		for _, want := range []string{
+			"--code-bg: #272822;",
+			"--code-fg: #f8f8f2;",
+			"--code-font-size: round(8.5pt, 1px);",
+			"html pre {",
+			"background: var(--code-bg);",
+			"html pre code {",
+			"html :not(pre) > code {",
+		} {
+			if !strings.Contains(css, want) {
+				t.Errorf("expected %q in CSS output", want)
+			}
+		}
+	})
+
+	t.Run("panel selectors outrank a bundle's bare pre rule", func(t *testing.T) {
+		// A bundle repainting only the background would break contrast against
+		// the theme's token colors, so the generated rules must win.
+		css := string(buildConfigCSS(config.Default()))
+		if strings.Contains(css, "\npre {") {
+			t.Error("panel rule emitted without the html prefix")
+		}
+	})
+
+	t.Run("code font stack keeps monospace fallbacks", func(t *testing.T) {
+		css := string(buildConfigCSS(config.Default()))
+		if !strings.Contains(css, `--code-font: "JetBrains Mono", ui-monospace`) {
+			t.Error("expected configured family ahead of the monospace fallbacks")
+		}
+	})
+
+	t.Run("font url is imported before any rule", func(t *testing.T) {
+		css := string(buildConfigCSS(config.Default()))
+		importAt := strings.Index(css, "@import url(")
+		if importAt < 0 {
+			t.Fatal("expected an @import for the code font")
+		}
+		if root := strings.Index(css, ":root {"); importAt > root {
+			t.Errorf("@import at %d comes after :root at %d, so it is ignored", importAt, root)
+		}
+	})
+
+	t.Run("no font url omits the import", func(t *testing.T) {
+		cfg := config.Default()
+		cfg.Code.FontURL = ""
+		if strings.Contains(string(buildConfigCSS(cfg)), "@import") {
+			t.Error("unexpected @import with no code font URL")
+		}
+	})
+
+	t.Run("theme tokens are emitted when highlighting is on", func(t *testing.T) {
+		css := string(buildConfigCSS(config.Default()))
+		if !strings.Contains(css, ".chroma .k") {
+			t.Error("expected chroma token rules")
+		}
+	})
+
+	t.Run("theme none omits token rules but keeps the panel", func(t *testing.T) {
+		cfg := config.Default()
+		cfg.Code.Theme = "none"
+		css := string(buildConfigCSS(cfg))
+		if strings.Contains(css, ".chroma .k") {
+			t.Error("unexpected chroma token rules with highlighting off")
+		}
+		if !strings.Contains(css, "html pre {") {
+			t.Error("expected the panel rule to survive with highlighting off")
+		}
+	})
+
+	t.Run("background override reaches the variable", func(t *testing.T) {
+		cfg := config.Default()
+		cfg.Code.Background = "#3b4252"
+		if !strings.Contains(string(buildConfigCSS(cfg)), "--code-bg: #3b4252;") {
+			t.Error("expected the background override in --code-bg")
+		}
+	})
+
+	t.Run("background none drops the panel and its padding", func(t *testing.T) {
+		cfg := config.Default()
+		cfg.Code.Background = "none"
+		css := string(buildConfigCSS(cfg))
+		if !strings.Contains(css, "--code-bg: transparent;") {
+			t.Error("expected a transparent --code-bg")
+		}
+		if !strings.Contains(css, "--code-fg: var(--text);") {
+			t.Error("expected the body text color with no panel behind the code")
+		}
+		if strings.Contains(css, "padding: 3.5mm 4mm;") {
+			t.Error("unexpected panel padding with no panel")
+		}
+	})
+
+	t.Run("line numbers off omits the gutter rules", func(t *testing.T) {
+		css := string(buildConfigCSS(config.Default()))
+		if strings.Contains(css, ".chroma .lnt") {
+			t.Error("unexpected line number rules by default")
+		}
+	})
+
+	t.Run("line numbers on emits the gutter rules", func(t *testing.T) {
+		cfg := config.Default()
+		cfg.Code.LineNumbers = true
+		css := string(buildConfigCSS(cfg))
+		if !strings.Contains(css, ".chroma .ln") {
+			t.Error("expected line number rules")
+		}
+	})
+
+	t.Run("wrap enabled wraps long lines without splitting words", func(t *testing.T) {
+		css := string(buildConfigCSS(config.Default()))
+		if !strings.Contains(css, "white-space: pre-wrap;") {
+			t.Error("expected pre-wrap when wrap is on")
+		}
+		// break-all would split short identifiers mid-word.
+		if strings.Contains(css, "word-break: break-all") {
+			t.Error("unexpected word-break: break-all")
+		}
+	})
+
+	t.Run("wrap disabled keeps lines intact", func(t *testing.T) {
+		cfg := config.Default()
+		cfg.Code.Wrap = false
+		css := string(buildConfigCSS(cfg))
+		if !strings.Contains(css, "html pre, html pre code { white-space: pre; }") {
+			t.Error("expected white-space: pre when wrap is off")
+		}
+	})
+}
+
+func TestCodeFontStack(t *testing.T) {
+	t.Run("quotes the configured family", func(t *testing.T) {
+		got := codeFontStack("JetBrains Mono")
+		if !strings.HasPrefix(got, `"JetBrains Mono", `) {
+			t.Errorf("got %q, want a quoted family first", got)
+		}
+	})
+
+	t.Run("empty family falls back to the mono stack alone", func(t *testing.T) {
+		if got := codeFontStack("  "); got != highlight.MonoFallbacks {
+			t.Errorf("got %q, want %q", got, highlight.MonoFallbacks)
+		}
+	})
+}
+
 func TestMarginBoxStyle(t *testing.T) {
 	got := marginBoxStyle("Inter")
 	if !strings.Contains(got, "Inter") {
@@ -118,6 +286,23 @@ func TestMarginBoxStyle(t *testing.T) {
 	}
 	if !strings.Contains(got, "font-family") {
 		t.Errorf("expected font-family property: %q", got)
+	}
+	if !strings.Contains(got, "round(8pt, 1px)") {
+		t.Errorf("expected the margin box size wrapped in round(): %q", got)
+	}
+}
+
+func TestRoundPx(t *testing.T) {
+	tests := []struct{ value, want string }{
+		{"8.5pt", "round(8.5pt, 1px)"},
+		{"11pt", "round(11pt, 1px)"},
+		{"0.9em", "round(0.9em, 1px)"},
+		{"16px", "round(16px, 1px)"},
+	}
+	for _, tc := range tests {
+		if got := roundPx(tc.value); got != tc.want {
+			t.Errorf("roundPx(%q) = %q, want %q", tc.value, got, tc.want)
+		}
 	}
 }
 

@@ -36,11 +36,28 @@ type PageConfig struct {
 	Margins MarginsConfig `yaml:"margins"`
 }
 
+// FontFace is one self-hosted font file. Faces are inlined into the document's
+// own stylesheet as data URIs, which keeps the PDF text layer intact: fonts
+// pulled in through a linked stylesheet make Chromium emit one positioned run
+// per glyph, and readers then reassemble copied text out of order.
+// File is resolved relative to the config file. Weight defaults to 400 and
+// Style to normal. UnicodeRange is optional and passed through as-is.
+type FontFace struct {
+	File         string `yaml:"file"`
+	Weight       int    `yaml:"weight"`
+	Style        string `yaml:"style"`
+	UnicodeRange string `yaml:"unicode_range"`
+}
+
+// FontConfig configures the body font. Faces takes precedence over URL: when it
+// is set the linked stylesheet is dropped, since mixing the two would put the
+// broken text layer back. Use `templify -fetch-fonts` to turn a URL into faces.
 type FontConfig struct {
-	Family     string  `yaml:"family"`
-	URL        string  `yaml:"url"`
-	Size       string  `yaml:"size"`
-	LineHeight float64 `yaml:"line_height"`
+	Family     string     `yaml:"family"`
+	URL        string     `yaml:"url"`
+	Faces      []FontFace `yaml:"faces"`
+	Size       string     `yaml:"size"`
+	LineHeight float64    `yaml:"line_height"`
 }
 
 type TOCConfig struct {
@@ -73,6 +90,24 @@ type ColorsConfig struct {
 	TextMuted    string `yaml:"text_muted"`
 }
 
+// CodeConfig configures how fenced code blocks and inline code are rendered.
+// Theme is a Chroma style name (see `templify --code-themes`); "none" or an
+// empty value disables syntax highlighting and keeps the plain panel style.
+// Background/Foreground override the colors the theme would otherwise pick.
+type CodeConfig struct {
+	Theme             string     `yaml:"theme"`
+	Background        string     `yaml:"background"`
+	Foreground        string     `yaml:"foreground"`
+	FontFamily        string     `yaml:"font_family"`
+	FontURL           string     `yaml:"font_url"`
+	Faces             []FontFace `yaml:"faces"`
+	FontSize          string     `yaml:"font_size"`
+	LineHeight        float64    `yaml:"line_height"`
+	LineNumbers       bool       `yaml:"line_numbers"`
+	Wrap              bool       `yaml:"wrap"`
+	KeepTogetherLines int        `yaml:"keep_together_lines"`
+}
+
 type CoverConfig struct {
 	Enabled  bool   `yaml:"enabled"`
 	Template string `yaml:"template"`
@@ -85,23 +120,37 @@ type ReferencesConfig struct {
 }
 
 type Config struct {
-	Page            PageConfig         `yaml:"page"`
-	Font            FontConfig         `yaml:"font"`
-	Headings        HeadingsConfig     `yaml:"headings"`
+	Page            PageConfig           `yaml:"page"`
+	Font            FontConfig           `yaml:"font"`
+	Headings        HeadingsConfig       `yaml:"headings"`
 	Justify         bool                 `yaml:"justify"`
 	ParagraphIndent string               `yaml:"paragraph_indent"`
 	HeadingIndent   string               `yaml:"heading_indent"`
 	HeadingNumbers  HeadingNumbersConfig `yaml:"heading_numbers"`
-	TOC             TOCConfig          `yaml:"toc"`
-	Header          HeaderFooterConfig `yaml:"header"`
-	Footer          HeaderFooterConfig `yaml:"footer"`
-	BlankPage       bool               `yaml:"blank_page"`
-	Colors          ColorsConfig       `yaml:"colors"`
-	Cover           CoverConfig        `yaml:"cover"`
-	References      ReferencesConfig   `yaml:"references"`
-	Custom          map[string]any     `yaml:"custom"`
+	TOC             TOCConfig            `yaml:"toc"`
+	Header          HeaderFooterConfig   `yaml:"header"`
+	Footer          HeaderFooterConfig   `yaml:"footer"`
+	BlankPage       bool                 `yaml:"blank_page"`
+	Colors          ColorsConfig         `yaml:"colors"`
+	Code            CodeConfig           `yaml:"code"`
+	Cover           CoverConfig          `yaml:"cover"`
+	References      ReferencesConfig     `yaml:"references"`
+	Custom          map[string]any       `yaml:"custom"`
 	dir             string
+	fontFacesCSS    string
 }
+
+// SetFontFacesCSS stores the @font-face rules built from Font.Faces and
+// Code.Faces. Reading and encoding the files happens before rendering, so the
+// stylesheet generator stays free of I/O.
+func (c *Config) SetFontFacesCSS(css string) { c.fontFacesCSS = css }
+
+// FontFacesCSS returns the inlined @font-face rules, or "" when no face is
+// configured.
+func (c *Config) FontFacesCSS() string { return c.fontFacesCSS }
+
+// Dir returns the directory of the config file, used to resolve relative paths.
+func (c *Config) Dir() string { return c.dir }
 
 // ApplyDocMeta overrides header/footer Left/Center/Right from the document's front matter.
 // Front matter keys "header" and "footer" accept the same left/center/right sub-keys.
@@ -255,6 +304,17 @@ func Default() *Config {
 			Background:   "#f8fafc",
 			Text:         "#0f172a",
 			TextMuted:    "#64748b",
+		},
+		Code: CodeConfig{
+			Theme:      "monokai",
+			FontFamily: "JetBrains Mono",
+			FontURL:    "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap",
+			FontSize:   "8.5pt",
+			LineHeight: 1.45,
+			Wrap:       true,
+			// Roughly half of an A4 text column, so short blocks stay whole
+			// while longer ones are free to break rather than overflow.
+			KeepTogetherLines: 25,
 		},
 		Cover: CoverConfig{
 			Enabled: true,

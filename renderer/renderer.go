@@ -19,6 +19,20 @@ var assets embed.FS
 const pagedJSConfig = `<script>
 window.PagedConfig = {
     auto: true,
+
+    // paged.js starts as soon as the DOM is interactive, which is well before a
+    // webfont has arrived. Laying out against fallback metrics and then
+    // reflowing once the real font lands leaves the PDF text layer in pieces:
+    // copied text comes back with stray spaces and letters out of order. The
+    // polyfill awaits this hook before paginating, so the layout is measured
+    // against the final fonts. It also makes pagination reproducible, which it
+    // is not when a font sometimes wins the race and sometimes doesn't.
+    before: async () => {
+        if (document.fonts && document.fonts.ready) {
+            await document.fonts.ready;
+        }
+    },
+
     after: () => {
         // TOC page numbers
         document.querySelectorAll('a.toc-entry[href], a.tof-entry[href]').forEach(entry => {

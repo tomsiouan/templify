@@ -9,6 +9,15 @@ page:
 font:
   family: Inter
   url: https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap
+  # faces: self-hosts the font instead of linking url above, which is what
+  # keeps copy-pasted PDF text intact (see "Self-hosting fonts" in the docs).
+  # Run `templify -fetch-fonts -config this-file.yml` to download the files
+  # behind url and print the faces: block to paste here.
+  # faces:
+  #   - file: ./fonts/inter-400.woff2
+  #     weight: 400
+  #   - file: ./fonts/inter-600.woff2
+  #     weight: 600
   size: 11pt
   line_height: 1.6
 
@@ -67,6 +76,24 @@ colors:
   background: "#f8fafc"
   text: "#0f172a"
   text_muted: "#64748b"
+
+code:
+  theme: monokai # syntax highlighting theme; run `templify -code-themes` for the list, "none" to disable
+  background: "" # override the theme's panel background (e.g. "#3b4252"); "none" removes the panel entirely
+  foreground: "" # override the theme's default text color
+  font_family: JetBrains Mono
+  font_url: https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap
+  # faces: same self-hosting mechanism as font.faces above, for the code font.
+  # faces:
+  #   - file: ./fonts/jetbrains-mono-400.woff2
+  #     weight: 400
+  #   - file: ./fonts/jetbrains-mono-700.woff2
+  #     weight: 700
+  font_size: 8.5pt
+  line_height: 1.45
+  line_numbers: false # only applies to fences naming a language; use ```text for plain blocks
+  wrap: true # wrap long lines instead of letting them overflow the page
+  keep_together_lines: 25 # blocks up to this many lines are never split across pages; 0 disables
 
 cover:
   enabled: true

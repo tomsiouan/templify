@@ -178,6 +178,43 @@ func GenerateFigureTable(doc *document.Document, heading string) {
 	doc.Body = template.HTML(body[:loc[0]] + sb.String() + body[end:])
 }
 
+var rePreBlock = regexp.MustCompile(`(?s)<pre(\b[^>]*)?>(.*?)</pre>`)
+
+// MarkShortCodeBlocks adds class="code-keep" to <pre> blocks of at most maxLines
+// lines, letting CSS keep only those from being split across pages. Longer
+// blocks stay breakable on purpose: a block taller than the page area cannot be
+// kept whole, and forcing it risks paged.js pushing it off the page entirely.
+// No-op when maxLines is zero or negative.
+func MarkShortCodeBlocks(doc *document.Document, maxLines int) {
+	if maxLines <= 0 {
+		return
+	}
+	body := rePreBlock.ReplaceAllStringFunc(string(doc.Body), func(block string) string {
+		m := rePreBlock.FindStringSubmatch(block)
+		if m == nil || codeLines(m[2]) > maxLines {
+			return block
+		}
+		attrs := m[1]
+		if strings.Contains(attrs, `class="`) {
+			attrs = strings.Replace(attrs, `class="`, `class="code-keep `, 1)
+		} else {
+			attrs += ` class="code-keep"`
+		}
+		return "<pre" + attrs + ">" + m[2] + "</pre>"
+	})
+	doc.Body = template.HTML(body)
+}
+
+// codeLines counts the rendered lines of a code block from its inner HTML.
+// Every line ends in a newline character, whether the block was highlighted
+// (the newline sits inside a whitespace span) or left as plain text.
+func codeLines(inner string) int {
+	if n := strings.Count(inner, "\n"); n > 0 {
+		return n
+	}
+	return 1
+}
+
 var (
 	reListItem     = regexp.MustCompile(`(?s)<li>(.*?)</li>`)
 	reRefListBlock = regexp.MustCompile(`(?s)<(ul|ol)(?: start="(\d+)")?>.*?</(?:ul|ol)>`)

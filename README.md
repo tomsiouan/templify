@@ -20,6 +20,9 @@ templify -input document.md -bundle ./my-bundle/ -output document.pdf
 | `-output` | `output.pdf` | Path for the generated PDF |
 | `-bundle` | `report` | Built-in bundle name (`report`, `invoice`, `quote`) or path to a local bundle directory |
 | `-config` | — | Path to a YAML config file overlaid on top of the bundle defaults |
+| `-code-themes` | — | List the syntax highlighting themes available for `code.theme` and exit |
+| `-fetch-fonts` | — | Download the fonts behind `font.url`/`code.font_url`, print the matching `faces:` block, and exit (requires `-config`) |
+| `-fonts-dir` | `./fonts` | Directory to save fonts into, for `-fetch-fonts` (relative to the config file) |
 
 ## Bundles
 
@@ -62,6 +65,7 @@ page:
 font:
   family: Inter
   url: https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap
+  # faces: [...]           # self-host instead of linking url, see "Self-hosting fonts" below
   size: 11pt
   line_height: 1.6
 
@@ -106,6 +110,18 @@ colors:
   text: "#0f172a"
   text_muted: "#64748b"
 
+code:
+  theme: monokai          # syntax highlighting theme; `templify -code-themes` lists them, "none" disables
+  background: ""          # override the theme's panel background; "none" removes the panel entirely
+  foreground: ""          # override the theme's default text color
+  font_family: JetBrains Mono
+  font_url: https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap
+  font_size: 8.5pt
+  line_height: 1.45
+  line_numbers: false     # only on fences naming a language; use ```text for plain blocks
+  wrap: true              # fold long lines instead of letting them run off the page
+  keep_together_lines: 25 # blocks up to this many lines never split across pages; 0 disables
+
 cover:
   enabled: true
   template: ""            # path to a custom cover template (relative to this file)
@@ -118,6 +134,20 @@ custom:                   # bundle-specific options, accessible in templates via
     labels:
       client: "Bill to"
 ```
+
+### Self-hosting fonts
+
+`font.url`/`code.font_url` link a webfont stylesheet by default, and Chromium fetches it at render time. This can leave the PDF's text layer subtly broken: copying text out of it may transpose letters or split words with stray spaces. The usual cause is a variable font — Google Fonts hands one out whenever a stylesheet requests more than one weight, and Chromium's PDF export mis-handles those.
+
+`font.faces`/`code.faces` self-host a static file per weight instead, inlined as a data URI:
+
+```bash
+templify -fetch-fonts -config myconfig.yml   # downloads the files, prints a faces: block to paste in
+```
+
+This fixes the worst of it, but a narrower version of the same symptom (specifically around underscores in monospace code) can persist even with a static font, caused by a fractional-pixel font-size rather than the font file itself. templify also wraps every generated `font-size` in CSS's `round(value, 1px)` automatically, no configuration needed — the two fixes address different triggers of the same underlying issue and both are required for fully clean copy-paste.
+
+See [Self-hosting fonts](https://tomsiouan.github.io/templify/docs/configuration/#self-hosting-fonts) in the docs for the full explanation, including why this is a PDF-reader bug (verified against an independent extraction engine) rather than a defect in the generated PDF.
 
 ## Front matter
 
@@ -192,6 +222,13 @@ Same structure as invoice. Use `quote_number` and `validity_date` instead of `in
   ```markdown
   ![alt text](image.png "This becomes the caption")
   ```
+- **Syntax highlighting** — fenced blocks are rendered as a filled panel, colored by language:
+  ````markdown
+  ```go
+  func main() {}
+  ```
+  ````
+  Pick the theme with `code.theme` (`templify -code-themes` lists them all)
 - **Auto heading IDs** — used for TOC anchor links
 
 ## Back matter
@@ -263,7 +300,9 @@ type FigureEntry struct {
 
 The template also receives:
 - `.Config` (`*config.Config`) — full config, including `.Config.CustomString "my.path" "default"` and `.Config.CustomBool "my.flag" false` for dot-path access into `custom:`
-- `.ConfigCSS` (`template.HTML`) — CSS block derived from the config (font, colors, margins, …)
+- `.ConfigCSS` (`template.HTML`) — CSS block derived from the config (font, colors, margins, code blocks, …)
+
+Do not style `pre`, `pre code` or `code` in a bundle: `.ConfigCSS` owns code blocks and its rules are prefixed with `html` so they outrank a bare `pre` rule. A theme's token colors and its panel background belong together, and a bundle repainting only the background would leave light text on a light panel. Override the `--code-*` variables instead, or match the `html pre` prefix and set `code.theme: none`. Bundles written before the `code:` section should drop their old `pre` rules.
 
 ### Template functions
 

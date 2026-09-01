@@ -61,6 +61,68 @@ func TestNumberListSection(t *testing.T) {
 	})
 }
 
+func TestMarkShortCodeBlocks(t *testing.T) {
+	// Three lines, so a maxLines of 3 keeps it and 2 lets it break.
+	const threeLines = "<pre><code>a\nb\nc\n</code></pre>"
+
+	t.Run("short block is kept together", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML(threeLines)}
+		MarkShortCodeBlocks(doc, 3)
+		if !strings.Contains(string(doc.Body), `<pre class="code-keep">`) {
+			t.Errorf("expected code-keep class: %s", doc.Body)
+		}
+	})
+
+	t.Run("long block is left breakable", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML(threeLines)}
+		MarkShortCodeBlocks(doc, 2)
+		if strings.Contains(string(doc.Body), "code-keep") {
+			t.Errorf("expected no code-keep class: %s", doc.Body)
+		}
+	})
+
+	t.Run("class is merged into an existing attribute", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML("<pre class=\"chroma\"><code>a\nb\n</code></pre>")}
+		MarkShortCodeBlocks(doc, 25)
+		if !strings.Contains(string(doc.Body), `class="code-keep chroma"`) {
+			t.Errorf("expected merged class attribute: %s", doc.Body)
+		}
+	})
+
+	t.Run("single line block with no newline counts as one line", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML("<pre><code>a</code></pre>")}
+		MarkShortCodeBlocks(doc, 1)
+		if !strings.Contains(string(doc.Body), "code-keep") {
+			t.Errorf("expected code-keep class: %s", doc.Body)
+		}
+	})
+
+	t.Run("each block is measured on its own", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML(
+			"<pre><code>a\n</code></pre><p>x</p><pre><code>a\nb\nc\nd\n</code></pre>")}
+		MarkShortCodeBlocks(doc, 2)
+		if got := strings.Count(string(doc.Body), "code-keep"); got != 1 {
+			t.Errorf("code-keep count = %d, want 1: %s", got, doc.Body)
+		}
+	})
+
+	t.Run("zero maxLines disables the whole pass", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML(threeLines)}
+		MarkShortCodeBlocks(doc, 0)
+		if string(doc.Body) != threeLines {
+			t.Errorf("body changed: %s", doc.Body)
+		}
+	})
+
+	t.Run("body without code blocks is untouched", func(t *testing.T) {
+		doc := &document.Document{Body: template.HTML("<p>text</p>")}
+		MarkShortCodeBlocks(doc, 25)
+		if string(doc.Body) != "<p>text</p>" {
+			t.Errorf("body changed: %s", doc.Body)
+		}
+	})
+}
+
 func TestMarkNoNumber(t *testing.T) {
 	t.Run("empty exclude list leaves body unchanged", func(t *testing.T) {
 		doc := &document.Document{Body: template.HTML(`<h2>Title</h2>`)}

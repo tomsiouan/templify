@@ -274,33 +274,9 @@
             }
 
             /* ════════════════════════════════════════
-       CODE
+       CODE — styled from the `code:` config section, see ConfigCSS above.
+       Override here (after ConfigCSS) to restyle blocks for this bundle.
     ════════════════════════════════════════ */
-            code {
-                font-family: "Courier New", Courier, monospace;
-                font-size: 9.5pt;
-                background: var(--bg-soft);
-                color: var(--blue);
-                padding: 0.5mm 2mm;
-                border-radius: 3px;
-            }
-
-            pre {
-                background: var(--bg-soft);
-                border-left: 4px solid var(--blue-light);
-                padding: 4mm 5mm;
-                border-radius: 0 5px 5px 0;
-                margin: 4mm 0;
-                page-break-inside: avoid;
-                overflow-x: auto;
-            }
-
-            pre code {
-                background: transparent;
-                color: var(--text);
-                padding: 0;
-                font-size: 9pt;
-            }
 
             /* ════════════════════════════════════════
        BLOCKQUOTE
@@ -448,11 +424,16 @@
                 border-bottom: 2px solid var(--blue);
                 padding-bottom: 2.5mm;
                 margin: 0 0 8mm;
+                /* Never leave the heading stranded at the bottom of a page. */
+                break-after: avoid;
+                page-break-after: avoid;
             }
 
+            /* Block, not flex: paged.js cannot split a flex container, so a TOC
+               longer than one page would move as a single lump and strand the
+               heading above it. The entries are block-level either way. */
             .toc {
-                display: flex;
-                flex-direction: column;
+                display: block;
             }
 
             .toc-entry {
@@ -462,6 +443,8 @@
                 color: var(--text);
                 margin-bottom: 2.5mm;
                 overflow: hidden;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
 
             .toc-entry-title {
@@ -534,9 +517,11 @@
             /* ════════════════════════════════════════
        TABLE OF FIGURES
     ════════════════════════════════════════ */
+            /* Block for the same reason as .toc: a flex container cannot be
+               paginated, so a long figure table would jump to the next page
+               whole instead of filling the current one. */
             .doc-tof {
-                display: flex;
-                flex-direction: column;
+                display: block;
                 margin-top: 3mm;
             }
 
@@ -547,6 +532,8 @@
                 color: var(--text);
                 margin-bottom: 3mm;
                 overflow: hidden;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
 
             .tof-entry-title {
@@ -565,12 +552,6 @@
                 font-variant-numeric: tabular-nums;
             }
 
-            @media print {
-                pre {
-                    white-space: pre-wrap;
-                    word-break: break-all;
-                }
-            }
         </style>
     </head>
     <body>

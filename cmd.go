@@ -12,11 +12,14 @@ type LogConfig struct {
 }
 
 type Config struct {
-	Input      string
-	Output     string
-	Bundle     string
-	ConfigPath string
-	Log        LogConfig
+	Input          string
+	Output         string
+	Bundle         string
+	ConfigPath     string
+	ListCodeThemes bool
+	FetchFonts     bool
+	FontsDir       string
+	Log            LogConfig
 }
 
 func parseFlags() (*Config, error) {
@@ -26,9 +29,23 @@ func parseFlags() (*Config, error) {
 	flag.StringVar(&cfg.Output, "output", "output.pdf", "path for the generated PDF")
 	flag.StringVar(&cfg.Bundle, "bundle", "report", "built-in bundle name or path to a bundle directory")
 	flag.StringVar(&cfg.ConfigPath, "config", "", "path to a YAML config file (overrides bundle defaults)")
+	flag.BoolVar(&cfg.ListCodeThemes, "code-themes", false, "list the syntax highlighting themes available for code.theme and exit")
+	flag.BoolVar(&cfg.FetchFonts, "fetch-fonts", false, "download the fonts behind font.url/code.font_url, print the matching faces: block, and exit")
+	flag.StringVar(&cfg.FontsDir, "fonts-dir", "./fonts", "directory to save fonts into, for -fetch-fonts (relative to the config file)")
 	flag.StringVar(&cfg.Log.Format, "log-format", "text", "log format: text or json")
 	flag.TextVar(&cfg.Log.Level, "log-level", slog.LevelInfo, "log level: DEBUG, INFO, WARN, ERROR")
 	flag.Parse()
+
+	if cfg.ListCodeThemes {
+		return &cfg, nil
+	}
+
+	if cfg.FetchFonts {
+		if cfg.ConfigPath == "" {
+			return nil, fmt.Errorf("-fetch-fonts requires -config")
+		}
+		return &cfg, nil
+	}
 
 	if cfg.Input == "" {
 		flag.Usage()
