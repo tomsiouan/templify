@@ -138,6 +138,35 @@ templify wraps every generated `font-size` — body text, headings, the code pan
 
 Self-hosting and whole-pixel rounding fix two different triggers of the same class of bug and neither replaces the other: rounding alone does not fix a variable font's internally-interpolated glyph metrics, and a static font alone does not fix a fractional-pixel font-size. Both are needed for fully clean copy-paste.
 
+### A third trigger: the font's own unitsPerEm
+
+Even with a static font and a whole-pixel font-size, one specific font can still corrupt copy-paste around one specific glyph, on every occurrence, regardless of size. The cause is inside the font file itself: a glyph's advance is stored as a fraction of the font's `unitsPerEm` (e.g. Manrope's underscore is 1320/2000 = 0.66 em). Scaling that fraction to *any* pixel size lands on a whole pixel only when `unitsPerEm` is a power of two (1024, 2048, 4096 — the convention most TrueType fonts follow) — binary floating point represents that division cleanly. A `unitsPerEm` of 1000 or 2000 (common among fonts derived from PostScript/CFF sources — Manrope and JetBrains Mono both use it) makes the division inexact, and PDFKit's misordering triggers again, immune to `round(font-size, 1px)` because the corruption doesn't come from the size at all.
+
+Check a font's `unitsPerEm` with [fontTools](https://github.com/fonttools/fonttools) (`pip install fonttools brotli`):
+
+```python
+from fontTools.ttLib import TTFont
+print(TTFont("your-font.woff2")["head"].unitsPerEm)
+```
+
+If it isn't a power of two, rescale it — this uniformly resizes every outline and metric, so the font looks identical, just represented at a different internal resolution:
+
+```python
+from fontTools.ttLib import TTFont
+from fontTools.ttLib.scaleUpem import scale_upem
+
+f = TTFont("your-font.woff2")
+scale_upem(f, 2048)
+f.flavor = "woff2"
+f.save("your-font-2048.woff2")
+```
+
+Do this once per font file, point `faces:` at the rescaled copies, and the glyph-level corruption is gone regardless of font-size. templify does not do this automatically — WOFF2 table rewriting needs a Brotli codec templify does not currently depend on — so for now it is a manual, one-time step per font.
+
+### A fourth trigger: padding on inline elements
+
+`padding` on an inline element sitting inside justified, reflowing prose (templify's inline `code` styling, before this was found) can make Chromium compute a slightly different line-box height for the one line carrying it, reintroducing the same fractional-position corruption for that line — occasionally swapping it with its wrapped neighbor on copy. templify's inline code now gets its highlight from `box-shadow`'s spread instead of `padding`: `box-shadow` paints outside the element's box without taking part in layout, so it looks identical but never perturbs the line box. If you add padding to your own inline (not block) elements inside body text in a custom bundle, prefer `box-shadow: 0 0 0 <spread> <color>` the same way.
+
 ## Code blocks
 
 Fenced code blocks are rendered as a filled, rounded panel with syntax

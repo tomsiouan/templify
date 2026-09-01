@@ -188,7 +188,15 @@ func writeCodeRules(sb *strings.Builder, cfg *config.Config) {
 	sb.WriteString("    background: var(--bg-soft);\n")
 	sb.WriteString("    color: var(--blue);\n")
 	sb.WriteString("    border-radius: 1mm;\n")
-	sb.WriteString("    padding: 0.2mm 1mm;\n")
+	// Padding, even a fraction of a millimeter, made Chromium compute a
+	// slightly different (fractional) line-box height for the one line
+	// carrying the inline code element, and PDF readers built on Apple's
+	// PDFKit occasionally reordered that line relative to its neighbor on
+	// copy. box-shadow's spread paints outside the box without taking part
+	// in layout, so it gives the same visual breathing room with none of
+	// that side effect.
+	sb.WriteString("    padding: 0;\n")
+	sb.WriteString("    box-shadow: 0 0 0 0.6mm var(--bg-soft);\n")
 	sb.WriteString("    hyphens: none;\n")
 	sb.WriteString("    overflow-wrap: break-word;\n")
 	sb.WriteString("}\n\n")

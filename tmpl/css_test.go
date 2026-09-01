@@ -159,6 +159,28 @@ func TestBuildConfigCSSCode(t *testing.T) {
 		}
 	})
 
+	t.Run("inline code uses box-shadow instead of padding", func(t *testing.T) {
+		// Padding on the inline <code> element made Chromium compute a
+		// slightly different line-box height for the one line carrying it,
+		// which some PDF readers (confirmed: Apple's PDFKit) occasionally
+		// reordered relative to its neighbor on copy. box-shadow's spread
+		// paints outside the box without taking part in layout, giving the
+		// same visual highlight with none of that side effect.
+		css := string(buildConfigCSS(config.Default()))
+		start := strings.Index(css, "html :not(pre) > code {")
+		if start < 0 {
+			t.Fatal("inline code rule not found")
+		}
+		end := strings.Index(css[start:], "}")
+		rule := css[start : start+end]
+		if !strings.Contains(rule, "padding: 0;") {
+			t.Errorf("expected zero padding on inline code:\n%s", rule)
+		}
+		if !strings.Contains(rule, "box-shadow:") {
+			t.Errorf("expected a box-shadow standing in for padding:\n%s", rule)
+		}
+	})
+
 	t.Run("code font stack keeps monospace fallbacks", func(t *testing.T) {
 		css := string(buildConfigCSS(config.Default()))
 		if !strings.Contains(css, `--code-font: "JetBrains Mono", ui-monospace`) {

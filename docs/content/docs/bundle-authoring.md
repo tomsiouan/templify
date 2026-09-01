@@ -116,6 +116,16 @@ If you need the panel itself, match the prefix so your rule wins, and set
 </style>
 ```
 
+This same reasoning extends beyond code: avoid `padding` on any inline
+(not block) element you place inside body text — inline `code` is the one
+built-in example. Padding on an inline element sitting inside reflowing text
+can make Chromium compute a slightly different line-box height for the one
+line carrying it, which some PDF readers occasionally reorder relative to its
+neighbor on copy (see [Self-hosting fonts](../configuration/#self-hosting-fonts)
+for the full story). `box-shadow: 0 0 0 <spread> <color>` gives the same visual
+highlight — its spread paints outside the box without taking part in layout —
+with none of that risk.
+
 Bundles written before the `code:` section usually carry a copy of the old
 quote-style `pre` rules. Delete them: they are dead weight now, and the block
 would otherwise be styled in two places at once.
