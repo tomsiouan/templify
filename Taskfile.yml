@@ -1,9 +1,13 @@
 version: "3"
 
+vars:
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo dev
+
 tasks:
   build:
     cmds:
-      - go build -o build/templify .
+      - go build -ldflags "-X main.version={{.VERSION}}" -o build/templify .
 
   test:
     cmds:

@@ -19,6 +19,7 @@ type Config struct {
 	ListCodeThemes bool
 	FetchFonts     bool
 	FontsDir       string
+	ShowVersion    bool
 	Log            LogConfig
 }
 
@@ -32,9 +33,14 @@ func parseFlags() (*Config, error) {
 	flag.BoolVar(&cfg.ListCodeThemes, "code-themes", false, "list the syntax highlighting themes available for code.theme and exit")
 	flag.BoolVar(&cfg.FetchFonts, "fetch-fonts", false, "download the fonts behind font.url/code.font_url, print the matching faces: block, and exit")
 	flag.StringVar(&cfg.FontsDir, "fonts-dir", "./fonts", "directory to save fonts into, for -fetch-fonts (relative to the config file)")
+	flag.BoolVar(&cfg.ShowVersion, "version", false, "print the version and exit")
 	flag.StringVar(&cfg.Log.Format, "log-format", "text", "log format: text or json")
 	flag.TextVar(&cfg.Log.Level, "log-level", slog.LevelInfo, "log level: DEBUG, INFO, WARN, ERROR")
 	flag.Parse()
+
+	if cfg.ShowVersion {
+		return &cfg, nil
+	}
 
 	if cfg.ListCodeThemes {
 		return &cfg, nil

@@ -23,6 +23,7 @@ templify -input document.md -bundle ./my-bundle/ -output document.pdf
 | `-code-themes` | — | List the syntax highlighting themes available for `code.theme` and exit |
 | `-fetch-fonts` | — | Download the fonts behind `font.url`/`code.font_url`, print the matching `faces:` block, and exit (requires `-config`) |
 | `-fonts-dir` | `./fonts` | Directory to save fonts into, for `-fetch-fonts` (relative to the config file) |
+| `-version` | — | Print the version and exit |
 
 ## Bundles
 
@@ -334,6 +335,12 @@ Or build from source:
 git clone https://github.com/tomsiouan/templify
 cd templify
 go build -o build/templify .
+```
+
+`templify -version` reports the tag it was built from. Building from a git checkout (`go build .`, `go install .`) picks this up automatically through Go's own VCS build-info stamping — no flags needed. `task build` and `go install github.com/tomsiouan/templify@vX.Y.Z` go one step further and inject the exact tag via `-ldflags`, which reads cleaner than the pseudo-version (`vX.Y.Z-N-gHASH[+dirty]`) Go's automatic stamping produces between tags:
+
+```bash
+go build -ldflags "-X main.version=$(git describe --tags --always --dirty)" -o build/templify .
 ```
 
 ## Requirements

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	"github.com/tomsiouan/templify/bundle"
 	"github.com/tomsiouan/templify/config"
@@ -14,6 +15,27 @@ import (
 	"github.com/tomsiouan/templify/tmpl"
 )
 
+// version is set at build time via -ldflags "-X main.version=...", normally
+// from `git describe --tags`, which reads cleaner than what Go's own build-info
+// stamping produces between tags. Left at its zero value otherwise;
+// resolveVersion() covers that case.
+var version = ""
+
+// resolveVersion returns the ldflags-injected version, falling back to the
+// module version Go's own build-info stamping records — automatic for
+// `go build .`/`go install .` in a git checkout (a VCS-derived pseudo-version)
+// and for `go install pkg@version` (the exact requested version) — and
+// finally to "dev" when neither is available (e.g. no VCS metadata at all).
+func resolveVersion() string {
+	if version != "" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "dev"
+}
+
 func main() {
 	flags, err := parseFlags()
 	if err != nil {
@@ -22,6 +44,11 @@ func main() {
 	}
 
 	setupLogger(flags.Log)
+
+	if flags.ShowVersion {
+		fmt.Println("templify " + resolveVersion())
+		return
+	}
 
 	if flags.ListCodeThemes {
 		for _, name := range highlight.Themes() {
